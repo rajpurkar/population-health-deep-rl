@@ -1,5 +1,7 @@
 import pandas as pd
 import sys
+import argparse
+import os
 
 def load_large_dta(fname):
     reader = pd.read_stata(fname, iterator=True)
@@ -16,8 +18,20 @@ def load_large_dta(fname):
         pass
 
     print '\nloaded {} rows'.format(len(df))
-    print(df)
     return df
 
+
+def convert_to_csv(dta, filename):
+    dta.to_csv(filename + '.csv')
+
+
 if __name__ == '__main__':
-	load_large_dta(sys.argv[1])
+    parser = argparse.ArgumentParser(description='Load data.')
+    parser.add_argument('file',
+                        help='File to load')
+    parser.add_argument('--output_dir',
+                        help='Output dir', default=".")
+    args = parser.parse_args()
+    dta = load_large_dta(args.file)
+    fname = os.path.basename(args.file)
+    convert_to_csv(dta, args.output_dir + '/' + fname)
