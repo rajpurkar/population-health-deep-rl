@@ -25,11 +25,7 @@ class LinearSchedule(object):
         Args:
             t: (int) nth frames
         """
-        slope = (self.eps_begin - self.eps_end)/float(self.nsteps)
-        if t > self.nsteps:
-            t = self.nsteps
-        new_eps = self.eps_begin - t*slope
-        self.epsilon = new_eps
+        self.epsilon = max((((self.eps_end - self.eps_begin) * 1.0 / self.nsteps) * t) + self.eps_begin, self.eps_end)
 
 
 class LinearExploration(LinearSchedule):
@@ -54,43 +50,8 @@ class LinearExploration(LinearSchedule):
         Returns:
             an action
         """
-        flip = np.random.random()
-        action = best_action
-        if flip < self.epsilon:
+        if random.random() < self.epsilon:
             action = self.env.action_space.sample()
+        else:
+            action = best_action
         return action
-
-
-def test1():
-    env = EnvTest((5, 5, 1))
-    exp_strat = LinearExploration(env, 1, 0, 10)
-    
-    found_diff = False
-    for i in range(10):
-        rnd_act = exp_strat.get_action(0)
-        if rnd_act != 0 and rnd_act is not None:
-            found_diff = True
-
-    assert found_diff, "Test 1 failed."
-    print("Test1: ok")
-
-
-def test2():
-    env = EnvTest((5, 5, 1))
-    exp_strat = LinearExploration(env, 1, 0, 10)
-    exp_strat.update(5)
-    assert exp_strat.epsilon == 0.5, "Test 2 failed"
-    print("Test2: ok")
-
-
-def test3():
-    env = EnvTest((5, 5, 1))
-    exp_strat = LinearExploration(env, 1, 0.5, 10)
-    exp_strat.update(20)
-    assert exp_strat.epsilon == 0.5, "Test 3 failed"
-    print("Test3: ok")
-
-if __name__ == "__main__":
-    test1()
-    test2()
-    test3()
