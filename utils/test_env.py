@@ -5,7 +5,9 @@ import numpy as np
 
 def sample_generate(feature_length):
     x = [random.choice([0, 1]) for _ in range(feature_length)]
-    y = 1 if x[0] + x[1] == 2 else 0
+    # y = 1 if x[0] + x[1] == 2 else 0
+    y = [0] * (feature_length + 1)
+    y[sum(x)] = 1
     return x, y
 
 
@@ -34,9 +36,9 @@ class EnvTest(object):
         self.reset()
 
     def reset(self):
-        self.cur_state = np.ones((self.feature_length, 1, 1))
         self.real_state, self.y = sample_generate(self.feature_length)
         self.num_iters = 0
+        self.cur_state = np.ones((self.feature_length, 1, 1))
         return self.cur_state
 
     def step(self, action):
