@@ -34,7 +34,7 @@ class EnvTest(object):
         self.reset()
 
     def reset(self):
-        self.cur_state = np.array([-1, -1, -1]).reshape(-1, 1, 1)
+        self.cur_state = np.ones((self.feature_length, 1, 1))
         self.real_state, self.y = sample_generate(self.feature_length)
         self.num_iters = 0
         return self.cur_state
