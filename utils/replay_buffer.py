@@ -145,7 +145,7 @@ class ReplayBuffer(object):
             img_h, img_w = self.obs.shape[1], self.obs.shape[2]
             return self.obs[start_idx:end_idx].transpose(1, 2, 0, 3).reshape(img_h, img_w, -1)
 
-    def store_frame(self, frame):
+    def store_frame(self, frame, ydim):
         """Store a single frame in the buffer at the next available index, overwriting
         old frames if necessary.
 
@@ -164,8 +164,11 @@ class ReplayBuffer(object):
             self.obs      = np.empty([self.size] + list(frame.shape), dtype=np.uint8)
             self.action   = np.empty([self.size],                     dtype=np.int32)
             self.reward   = np.empty([self.size],                     dtype=np.float32)
-            self.y        = np.empty([self.size, 6],                     dtype=np.int32)
             self.done     = np.empty([self.size],                     dtype=np.bool)
+            if ydim != None:
+                self.y        = np.empty([self.size, ydim],                     dtype=np.int32)
+            else:
+                self.y        = np.empty([self.size],                     dtype=np.int32)
         self.obs[self.next_idx] = frame
 
         ret = self.next_idx

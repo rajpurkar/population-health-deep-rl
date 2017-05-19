@@ -162,6 +162,12 @@ class QN(object):
         
         prog = Progbar(target=self.config.nsteps_train)
 
+        if self.config.k_class:
+            state_shape = list(self.env.observation_space.shape)
+            k = state_shape[0] + 1
+        else:
+            k = None
+
         # interact with environment
         while t < self.config.nsteps_train:
             total_reward = 0
@@ -172,7 +178,7 @@ class QN(object):
                 last_record += 1
                 if self.config.render_train: self.env.render()
                 # replay memory stuff
-                idx      = replay_buffer.store_frame(state)
+                idx      = replay_buffer.store_frame(state, k)
                 q_input = replay_buffer.encode_recent_observation()
 
                 # chose action according to current Q and exploration
@@ -285,6 +291,12 @@ class QN(object):
         replay_buffer = ReplayBuffer(self.config.buffer_size, self.config.state_history)
         rewards = []
 
+        if self.config.k_class:
+            state_shape = list(self.env.observation_space.shape)
+            k = state_shape[0] + 1
+        else:
+            k = None
+
         for i in range(num_episodes):
             total_reward = 0
             state = env.reset()
@@ -292,7 +304,7 @@ class QN(object):
                 if self.config.render_test: env.render()
 
                 # store last state in buffer
-                idx     = replay_buffer.store_frame(state)
+                idx     = replay_buffer.store_frame(state, k)
                 q_input = replay_buffer.encode_recent_observation()
 
                 action = self.get_action(q_input)
