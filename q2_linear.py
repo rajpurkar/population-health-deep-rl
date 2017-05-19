@@ -50,12 +50,11 @@ class Linear(DQN):
         """
         batch_size = None
         num_features = state_shape[0]
-        input_dim = state_shape[0]
-        par = nchannels*config.state_history
+        input_dim = state_shape[1]
         self.s = tf.placeholder(tf.uint8, (batch_size, num_features, input_dim))
         self.a = tf.placeholder(tf.int32, (batch_size, ))
         self.r = tf.placeholder(tf.float32, (batch_size, ))
-        self.sp = tf.placeholder(tf.uint8, (batch_size, img_height, img_width, par))
+        self.sp = tf.placeholder(tf.uint8, (batch_size, num_features, input_dim))
         self.done_mask = tf.placeholder(tf.bool, (batch_size, ))
         self.lr = tf.placeholder(tf.float32, None)
         self.y = tf.placeholder(tf.uint8, (batch_size, ))
@@ -137,7 +136,9 @@ class Linear(DQN):
         action_taken = tf.argmax(q)
         num_actions = self.env.action_space.n
         self.done_mask = tf.equal(action_taken, num_actions - 1)
-        pred_loss = tf.cast(self.done_mask, tf.float32)*tf.nn.sparse_softmax_cross_entropy_with_logits(labels=pred, logits=self.y)
+        print "Q SHAPE", q.get_shape().ndims
+        print "Pred SHAPE", pred.get_shape().ndims
+        pred_loss = tf.cast(self.done_mask, tf.float32)*tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.y, logits=pred)
         qsamp = self.r + self.config.gamma * tf.reduce_max(target_q, axis=1)
         qs = tf.reduce_sum(tf.one_hot(self.a, num_actions)*q, axis=1)
         self.loss = tf.reduce_mean(tf.squared_difference(qsamp, qs)) + tf.reduce_mean(pred_loss)

@@ -179,7 +179,7 @@ class QN(object):
                 best_action, q_values = self.get_best_action(q_input)
                 action                = exp_schedule.get_action(best_action)
 
-                if action = self.env.action_space.n - 1:
+                if action == self.env.action_space.n - 1:
                     break
 
 

@@ -30,7 +30,7 @@ class NatureQN(Linear):
             out: (tf tensor) of shape = (batch_size, num_actions)
         """
         # this information might be useful
-        num_actions = 4
+        num_actions = self.env.action_space.n
         common = state
         ##############################################################
         """
@@ -55,13 +55,14 @@ class NatureQN(Linear):
         ################ YOUR CODE HERE - 10-15 lines ################ 
 
         with tf.variable_scope(scope, reuse):
+            common = layers.flatten(common)
             common = layers.fully_connected(common, 24, activation_fn=tf.nn.relu)
             common = layers.fully_connected(common, 48, activation_fn=tf.nn.relu)
             pred = layers.fully_connected(common, 2, activation_fn=tf.nn.relu)
             out = layers.fully_connected(common, num_actions, activation_fn=None)
         ##############################################################
         ######################## END YOUR CODE #######################
-        return out
+        return out, pred
 
 
 """
