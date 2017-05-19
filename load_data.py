@@ -1,7 +1,9 @@
+from __future__ import print_function
 import pandas as pd
 import sys
 import argparse
 import os
+
 
 def load_large_dta(fname):
     reader = pd.read_stata(fname, iterator=True)
@@ -12,16 +14,17 @@ def load_large_dta(fname):
         while len(chunk) > 0:
             df = df.append(chunk, ignore_index=True)
             chunk = reader.get_chunk(100*1000)
-            print '.',
+            print('.'),
             sys.stdout.flush()
     except (StopIteration, KeyboardInterrupt):
         pass
 
-    print '\nloaded {} rows'.format(len(df))
+    print('\nloaded {} rows'.format(len(df)))
     return df
 
 
 def convert_to_csv(dta, filename):
+    print("saving to csv...")
     dta.to_csv(filename + '.csv')
 
 
