@@ -49,12 +49,12 @@ class Linear(DQN):
               you can also use the state_shape computed above.
         """
         batch_size = None
-        num_features = state_shape[0]
-        input_dim = state_shape[1]
-        self.s = tf.placeholder(tf.uint8, (batch_size, num_features, input_dim))
+        image_width = state_shape[0]
+        image_height = state_shape[1]
+        self.s = tf.placeholder(tf.uint8, (batch_size, image_width, image_height, self.config.state_history))
         self.a = tf.placeholder(tf.int32, (batch_size, ))
         self.r = tf.placeholder(tf.float32, (batch_size, ))
-        self.sp = tf.placeholder(tf.uint8, (batch_size, num_features, input_dim))
+        self.sp = tf.placeholder(tf.uint8, (batch_size, image_width, image_height, self.config.state_history))
         self.done_mask = tf.placeholder(tf.bool, (batch_size, ))
         self.lr = tf.placeholder(tf.float32, None)
         self.y = tf.placeholder(tf.int32, (batch_size, ))
