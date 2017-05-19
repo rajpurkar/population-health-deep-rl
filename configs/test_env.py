@@ -24,7 +24,7 @@ class config():
     soft_epsilon      = 0
 
     # hyper params
-    nsteps_train       = 1000
+    nsteps_train       = 10000
     batch_size         = 32
     buffer_size        = 500
     target_update_freq = 500
@@ -35,7 +35,7 @@ class config():
     lr_end             = 0.0001
     lr_nsteps          = nsteps_train/2
     eps_begin          = 1
-    eps_end            = 0.01
+    eps_end            = 0.1
     eps_nsteps         = nsteps_train/2
     learning_start     = 200
 

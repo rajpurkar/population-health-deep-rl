@@ -56,16 +56,21 @@ class SimpleQN(DQN):
             target_q: (tf tensor) shape = (batch_size, num_actions)
         """
         # you may need this variable
+        """
         if self.config.k_class:
             pred_loss = tf.losses.softmax_cross_entropy(self.y, logits=pred)
         else:
             pred_loss = tf.losses.sigmoid_cross_entropy(self.y, logits=pred)
-        action_taken = tf.argmax(q)
+        # action_taken = tf.argmax(q)
         num_actions = self.env.action_space.n
-        qsamp = self.r + self.config.gamma * tf.reduce_max(target_q, axis=1)
+        qsamp = self.r + self.config.gamma * tf.reduce_max(target_q, axis=1) * tf.cast()
         qs = tf.reduce_sum(tf.one_hot(self.a, num_actions)*q, axis=1)
         self.loss = tf.reduce_mean(tf.squared_difference(qsamp, qs)) + tf.reduce_mean(pred_loss)
-
+        """
+        num_actions = self.env.action_space.n
+        q_samp = self.r + (1.0 - tf.cast(self.done_mask, tf.float32)) * self.config.gamma * tf.reduce_max(target_q, axis=1)
+        q_sa = tf.reduce_sum(tf.multiply(q, tf.one_hot(self.a, num_actions, axis=1)), axis=1)
+        self.loss = tf.reduce_mean(tf.squared_difference(q_samp, q_sa))
 
 
     def add_optimizer_op(self, scope):
@@ -107,9 +112,11 @@ class SimpleQN(DQN):
         common = state
         with tf.variable_scope(scope, reuse):
             common = layers.flatten(common)
-            common = layers.fully_connected(common, 24, activation_fn=tf.nn.relu)
-            common = layers.fully_connected(common, 48, activation_fn=tf.nn.relu)
-            if self.config.k_class:
+            #common = layers.fully_connected(common, 24, activation_fn=tf.nn.relu)
+            common = layers.fully_connected(common, 10, activation_fn=tf.nn.relu)
+            common = layers.fully_connected(common, 10, activation_fn=tf.nn.relu)
+            common = layers.fully_connected(common, 10, activation_fn=tf.nn.relu)
+            if self.config.k_class is True:
                 state_shape = list(self.env.observation_space.shape)
                 k = state_shape[0] + 1
                 pred = layers.fully_connected(common, k, activation_fn=None)

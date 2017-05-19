@@ -195,7 +195,6 @@ class QN(object):
 
                 # perform action in env
                 new_state, y, reward, done, info = self.env.step(action)
-
                 # store the transition
                 replay_buffer.store_effect(idx, action, reward, y, done)
                 state = new_state
