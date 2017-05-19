@@ -113,8 +113,8 @@ class Linear(DQN):
         """
         q_variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=q_scope)
         target_q_variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=target_q_scope)
-        q_variables = sorted(q_variables, key= lambda x : x.name)
-        target_q_variables = sorted(target_q_variables, key= lambda x : x.name)
+        q_variables = sorted(q_variables, key=lambda x: x.name)
+        target_q_variables = sorted(target_q_variables, key=lambda x: x.name)
         ops = []
         for i, var in enumerate(q_variables):
             ops.append(tf.assign(target_q_variables[i], var))
@@ -160,7 +160,7 @@ class Linear(DQN):
 
         self.train_op = optimizer.apply_gradients(grads_and_vars)
 
-        grads  = [g for g, v in grads_and_vars]
+        grads = [g for g, v in grads_and_vars]
 
         self.grad_norm = tf.global_norm(grads)
 

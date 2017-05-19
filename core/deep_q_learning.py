@@ -130,18 +130,18 @@ class DQN(QN):
 
         # add placeholders from the graph
         tf.summary.scalar("loss", self.loss)
-        tf.summary.scalar("grads norm", self.grad_norm)
+        tf.summary.scalar("grads_norm", self.grad_norm)
 
         # extra summaries from python -> placeholders
-        tf.summary.scalar("Avg Reward", self.avg_reward_placeholder)
-        tf.summary.scalar("Max Reward", self.max_reward_placeholder)
-        tf.summary.scalar("Std Reward", self.std_reward_placeholder)
+        tf.summary.scalar("Avg_Reward", self.avg_reward_placeholder)
+        tf.summary.scalar("Max_Reward", self.max_reward_placeholder)
+        tf.summary.scalar("Std_Reward", self.std_reward_placeholder)
 
-        tf.summary.scalar("Avg Q", self.avg_q_placeholder)
-        tf.summary.scalar("Max Q", self.max_q_placeholder)
-        tf.summary.scalar("Std Q", self.std_q_placeholder)
+        tf.summary.scalar("Avg_Q", self.avg_q_placeholder)
+        tf.summary.scalar("Max_Q", self.max_q_placeholder)
+        tf.summary.scalar("Std_Q", self.std_q_placeholder)
 
-        tf.summary.scalar("Eval Reward", self.eval_reward_placeholder)
+        tf.summary.scalar("Eval_Reward", self.eval_reward_placeholder)
             
         # logging
         self.merged = tf.summary.merge_all()
