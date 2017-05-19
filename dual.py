@@ -6,9 +6,6 @@ from utils.test_env import EnvTest
 from core.deep_q_learning import DQN
 
 
-from configs.q3_nature import config
-
-
 class SimpleQN(DQN):
     def add_placeholders_op(self):
         """
@@ -126,6 +123,7 @@ class SimpleQN(DQN):
 Use deep Q network for test environment.
 """
 if __name__ == '__main__':
+    from configs.test_env import config
     env = EnvTest((5, 1, 1))
     model = SimpleQN(env, config)
     model.run()
