@@ -1,6 +1,6 @@
 class config():
     # env config
-    render_train     = True
+    render_train     = False
     render_test      = False
     overwrite_render = True
     record           = False
