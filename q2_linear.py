@@ -52,7 +52,7 @@ class Linear(DQN):
         img_height = state_shape[0]
         img_width = state_shape[1]
         nchannels = state_shape[2]
-        par = nchannels*config.state_history
+        par = nchannels* self.config.state_history
         self.s = tf.placeholder(tf.uint8, (batch_size, img_height, img_width, par))
         self.a = tf.placeholder(tf.int32, (batch_size, ))
         self.r = tf.placeholder(tf.float32, (batch_size, ))
