@@ -31,7 +31,7 @@ class NatureQN(Linear):
         """
         # this information might be useful
         num_actions = self.env.action_space.n
-        out = state
+        common = state
         ##############################################################
         """
         TODO: implement the computation of Q values like in the paper
@@ -55,18 +55,16 @@ class NatureQN(Linear):
         ################ YOUR CODE HERE - 10-15 lines ################ 
 
         with tf.variable_scope(scope, reuse):
-            out = layers.convolution2d(out, num_outputs=32, kernel_size=[8,8], activation_fn=tf.nn.relu, stride=4)
-            out = layers.convolution2d(out, num_outputs=64, kernel_size=[4,4], activation_fn=tf.nn.relu, stride=2)
-            out = layers.convolution2d(out, num_outputs=64, kernel_size=[3,3], activation_fn=tf.nn.relu, stride=1)
-            out = layers.flatten(out)
-            out = layers.fully_connected(out, 512, activation_fn=tf.nn.relu)
-            out = layers.fully_connected(out, num_actions, activation_fn=None)
+            common = layers.fully_connected(common, 24, activation_fn=tf.nn.relu)
+            common = layers.fully_connected(common, 48, activation_fn=tf.nn.relu)
+            out = layers.fully_connected(common, num_actions, activation_fn=None)
+            pred = layers.fully_connected(common, 2, activation_fn=None)
 
 
 
         ##############################################################
         ######################## END YOUR CODE #######################
-        return out
+        return out, pred
 
 
 """

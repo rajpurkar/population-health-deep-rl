@@ -75,17 +75,17 @@ class DQN(QN):
 
         # compute Q values of state
         s = self.process_state(self.s)
-        self.q = self.get_q_values_op(s, scope="q", reuse=False)
+        self.q, self.pred = self.get_q_values_op(s, scope="q", reuse=False)
 
         # compute Q values of next state
         sp = self.process_state(self.sp)
-        self.target_q = self.get_q_values_op(sp, scope="target_q", reuse=False)
+        self.target_q, _ = self.get_q_values_op(sp, scope="target_q", reuse=False)
 
         # add update operator for target network
         self.add_update_target_op("q", "target_q")
 
         # add square loss
-        self.add_loss_op(self.q, self.target_q)
+        self.add_loss_op(self.q, self.target_q, self.pred)
 
         # add optmizer for the main networks
         self.add_optimizer_op("q")

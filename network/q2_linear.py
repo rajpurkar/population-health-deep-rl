@@ -49,16 +49,16 @@ class Linear(DQN):
               you can also use the state_shape computed above.
         """
         batch_size = None
-        img_height = state_shape[0]
-        img_width = state_shape[1]
-        nchannels = state_shape[2]
+        num_features = state_shape[0]
+        input_dim = state_shape[0]
         par = nchannels*config.state_history
-        self.s = tf.placeholder(tf.uint8, (batch_size, img_height, img_width, par))
+        self.s = tf.placeholder(tf.uint8, (batch_size, num_features, input_dim))
         self.a = tf.placeholder(tf.int32, (batch_size, ))
         self.r = tf.placeholder(tf.float32, (batch_size, ))
         self.sp = tf.placeholder(tf.uint8, (batch_size, img_height, img_width, par))
         self.done_mask = tf.placeholder(tf.bool, (batch_size, ))
         self.lr = tf.placeholder(tf.float32, None)
+        self.y = tf.placeholder(tf.uint8, (batch_size, ))
 
 
     def get_q_values_op(self, state, scope, reuse=False):
@@ -125,7 +125,7 @@ class Linear(DQN):
         ######################## END YOUR CODE #######################
 
 
-    def add_loss_op(self, q, target_q):
+    def add_loss_op(self, q, target_q, pred):
         """
         Sets the loss of a batch, self.loss is a scalar
 
@@ -134,10 +134,13 @@ class Linear(DQN):
             target_q: (tf tensor) shape = (batch_size, num_actions)
         """
         # you may need this variable
+        action_taken = tf.argmax(q)
         num_actions = self.env.action_space.n
-        qsamp = self.r + self.config.gamma * tf.reduce_max(target_q, axis=1) * (1.0 - tf.cast(self.done_mask, tf.float32))
+        self.done_mask = tf.equal(action_taken, num_actions - 1)
+        pred_loss = tf.cast(self.done_mask, tf.float32)*tf.nn.sparse_softmax_cross_entropy_with_logits(labels=pred, logits=self.y)
+        qsamp = self.r + self.config.gamma * tf.reduce_max(target_q, axis=1)
         qs = tf.reduce_sum(tf.one_hot(self.a, num_actions)*q, axis=1)
-        self.loss = tf.reduce_mean(tf.squared_difference(qsamp, qs))
+        self.loss = tf.reduce_mean(tf.squared_difference(qsamp, qs)) + tf.reduce_mean(pred_loss)
 
 
     def add_optimizer_op(self, scope):
