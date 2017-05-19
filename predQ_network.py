@@ -40,7 +40,7 @@ class SimpleQN(DQN):
                - self.lr: learning rate, type = float32
         
          """
-        batch_size = 32
+        batch_size = None
         image_width = state_shape[0]
         image_height = state_shape[1]
         channels = state_shape[2] * self.config.state_history
@@ -52,7 +52,7 @@ class SimpleQN(DQN):
             (batch_size, image_width, image_height, channels))
         self.done_mask = tf.placeholder(tf.bool, (batch_size, ))
         self.lr = tf.placeholder(tf.float32, batch_size)
-        self.y = tf.placeholder(tf.int32, (batch_size, 1))
+        self.y = tf.placeholder(tf.int32, (batch_size))
 
 
     def add_update_target_op(self, q_scope, target_q_scope):
