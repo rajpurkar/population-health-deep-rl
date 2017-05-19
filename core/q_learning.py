@@ -191,7 +191,7 @@ class QN(object):
                 new_state, y, reward, done, info = self.env.step(action)
 
                 # store the transition
-                replay_buffer.store_effect(idx, action, reward, done)
+                replay_buffer.store_effect(idx, action, reward, y, done)
                 state = new_state
 
                 # perform a training step
@@ -301,7 +301,7 @@ class QN(object):
                 new_state, y, reward, done, info = env.step(action)
 
                 # store in replay memory
-                replay_buffer.store_effect(idx, action, reward, done)
+                replay_buffer.store_effect(idx, action, reward, y, done)
                 state = new_state
 
                 # count reward
