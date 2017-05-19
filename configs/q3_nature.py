@@ -37,5 +37,5 @@ class config():
     eps_nsteps         = nsteps_train/2
     learning_start     = 200
 
-    k_class = True
+    k_class = False
     

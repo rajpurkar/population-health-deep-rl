@@ -20,26 +20,6 @@ class SimpleQN(DQN):
         (so we can use different batch sizes without rebuilding the model
         """
         state_shape = list(self.env.observation_space.shape)
-        ##############################################################
-        """
-        TODO: add placeholders:
-              Remember that we stack 4 consecutive frames together, ending up with an input of shape
-              (80, 80, 4).
-               - self.s: batch of states, type = uint8
-                         shape = (batch_size, img height, img width, nchannels x config.state_history)
-               - self.a: batch of actions, type = int32
-                         shape = (batch_size)
-               - self.r: batch of rewards, type = float32
-                         shape = (batch_size)
-               - self.sp: batch of next states, type = uint8
-                         shape = (batch_size, img height, img width, nchannels x config.state_history)
-               - self.done_mask: batch of done, type = bool
-                         shape = (batch_size)
-                         note that this placeholder contains bool = True only if we are done in 
-                         the relevant transition
-               - self.lr: learning rate, type = float32
-        
-         """
         batch_size = None
         image_width = state_shape[0]
         image_height = state_shape[1]
@@ -80,14 +60,16 @@ class SimpleQN(DQN):
             target_q: (tf tensor) shape = (batch_size, num_actions)
         """
         # you may need this variable
+        if self.config.k_class:
+            pred_loss = tf.losses.softmax_cross_entropy(self.y, logits=pred)
+        else:
+            pred_loss = tf.losses.sigmoid_cross_entropy(self.y, logits=pred)
         action_taken = tf.argmax(q)
         num_actions = self.env.action_space.n
-        # self.done_mask = tf.equal(action_taken, num_actions - 1)
-        # pred_loss = tf.cast(self.done_mask, tf.float32)*tf.losses.sigmoid_cross_entropy(self.y, logits=pred)
-        pred_loss = tf.losses.sigmoid_cross_entropy(self.y, logits=pred)
         qsamp = self.r + self.config.gamma * tf.reduce_max(target_q, axis=1)
         qs = tf.reduce_sum(tf.one_hot(self.a, num_actions)*q, axis=1)
         self.loss = tf.reduce_mean(tf.squared_difference(qsamp, qs)) + tf.reduce_mean(pred_loss)
+
 
 
     def add_optimizer_op(self, scope):
@@ -127,12 +109,16 @@ class SimpleQN(DQN):
         """
         num_actions = self.env.action_space.n
         common = state
-
         with tf.variable_scope(scope, reuse):
             common = layers.flatten(common)
             common = layers.fully_connected(common, 24, activation_fn=tf.nn.relu)
             common = layers.fully_connected(common, 48, activation_fn=tf.nn.relu)
-            pred = layers.fully_connected(common, 1, activation_fn=tf.sigmoid)
+            if self.config.k_class:
+                state_shape = list(self.env.observation_space.shape)
+                k = state_shape[0] + 1
+                pred = layers.fully_connected(common, k, activation_fn=tf.softmax)
+            else:
+                pred = layers.fully_connected(common, 1, activation_fn=tf.sigmoid)
             out = layers.fully_connected(common, num_actions, activation_fn=None)
         return out, pred
 
