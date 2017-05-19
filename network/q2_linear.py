@@ -6,8 +6,6 @@ from utils.test_env import EnvTest
 from core.deep_q_learning import DQN
 from q1_schedule import LinearExploration, LinearSchedule
 
-from configs.q2_linear import config
-
 
 class Linear(DQN):
     """
