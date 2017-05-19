@@ -8,6 +8,7 @@ import random
 
 from utils.general import get_logger, Progbar, export_plot
 from utils.replay_buffer import ReplayBuffer
+from utils.exploration import LinearExploration, LinearSchedule
 
 
 class QN(object):
@@ -321,7 +322,7 @@ class QN(object):
         return avg_reward
 
 
-    def run(self, exp_schedule, lr_schedule):
+    def run(self):
         """
         Apply procedures of training for a QN
 
@@ -335,6 +336,19 @@ class QN(object):
         # record one game at the beginning
         if self.config.record:
             self.record()
+
+        # exploration strategy
+        exp_schedule = LinearExploration(
+            self.env,
+            self.config.eps_begin,
+            self.config.eps_end,
+            self.config.eps_nsteps)
+
+        # learning rate schedule
+        lr_schedule  = LinearSchedule(
+            self.config.lr_begin,
+            self.config.lr_end,
+            self.config.lr_nsteps)
 
         # model
         self.train(exp_schedule, lr_schedule)

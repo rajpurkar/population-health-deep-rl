@@ -3,7 +3,6 @@ import tensorflow.contrib.layers as layers
 
 from utils.general import get_logger
 from utils.test_env import EnvTest
-from q1_schedule import LinearExploration, LinearSchedule
 from core.deep_q_learning import DQN
 
 
@@ -128,15 +127,5 @@ Use deep Q network for test environment.
 """
 if __name__ == '__main__':
     env = EnvTest((5, 1, 1))
-
-    # exploration strategy
-    exp_schedule = LinearExploration(env, config.eps_begin, 
-            config.eps_end, config.eps_nsteps)
-
-    # learning rate schedule
-    lr_schedule  = LinearSchedule(config.lr_begin, config.lr_end,
-            config.lr_nsteps)
-
-    # train model
     model = SimpleQN(env, config)
-    model.run(exp_schedule, lr_schedule)
+    model.run()
