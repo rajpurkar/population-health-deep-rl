@@ -322,7 +322,7 @@ class QN(object):
         return avg_reward
 
 
-    def run(self, exp_schedule, lr_schedule):
+    def run(self):
         """
         Apply procedures of training for a QN
 
