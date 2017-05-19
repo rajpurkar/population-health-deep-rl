@@ -57,7 +57,7 @@ class Linear(DQN):
         self.sp = tf.placeholder(tf.uint8, (batch_size, num_features, input_dim))
         self.done_mask = tf.placeholder(tf.bool, (batch_size, ))
         self.lr = tf.placeholder(tf.float32, None)
-        self.y = tf.placeholder(tf.uint8, (batch_size, ))
+        self.y = tf.placeholder(tf.int32, (batch_size, ))
 
 
     def get_q_values_op(self, state, scope, reuse=False):
