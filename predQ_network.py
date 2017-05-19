@@ -69,7 +69,7 @@ class NatureQN(Linear):
 Use deep Q network for test environment.
 """
 if __name__ == '__main__':
-    env = EnvTest((80, 80, 1))
+    env = EnvTest((3, 1, 1))
 
     # exploration strategy
     exp_schedule = LinearExploration(env, config.eps_begin, 
