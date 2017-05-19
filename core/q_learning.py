@@ -88,9 +88,8 @@ class QN(object):
         Args:
             state: observation from gym
         """
-        num_actions = 4
         if np.random.random() < self.config.soft_epsilon:
-            return random.randint(0, 4)
+            return self.env.action_space.sample()
         else:
             return self.get_best_action(state)[0]
 
