@@ -58,7 +58,7 @@ class NatureQN(Linear):
             common = layers.flatten(common)
             common = layers.fully_connected(common, 24, activation_fn=tf.nn.relu)
             common = layers.fully_connected(common, 48, activation_fn=tf.nn.relu)
-            pred = layers.fully_connected(common, 2, activation_fn=tf.nn.relu)
+            pred = layers.fully_connected(common, 1, activation_fn=tf.sigmoid)
             out = layers.fully_connected(common, num_actions, activation_fn=None)
         ##############################################################
         ######################## END YOUR CODE #######################
@@ -69,7 +69,7 @@ class NatureQN(Linear):
 Use deep Q network for test environment.
 """
 if __name__ == '__main__':
-    env = EnvTest((3, 1, 1))
+    env = EnvTest((5, 1, 1))
 
     # exploration strategy
     exp_schedule = LinearExploration(env, config.eps_begin, 

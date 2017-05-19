@@ -52,12 +52,12 @@ class Linear(DQN):
         image_width = state_shape[0]
         image_height = state_shape[1]
         self.s = tf.placeholder(tf.uint8, (batch_size, image_width, image_height, self.config.state_history))
-        self.a = tf.placeholder(tf.int32, (batch_size, ))
-        self.r = tf.placeholder(tf.float32, (batch_size, ))
+        self.a = tf.placeholder(tf.int32, (batch_size))
+        self.r = tf.placeholder(tf.float32, (batch_size))
         self.sp = tf.placeholder(tf.uint8, (batch_size, image_width, image_height, self.config.state_history))
         self.done_mask = tf.placeholder(tf.bool, (batch_size, ))
         self.lr = tf.placeholder(tf.float32, None)
-        self.y = tf.placeholder(tf.int32, (batch_size, ))
+        self.y = tf.placeholder(tf.int32, (batch_size))
 
 
     def get_q_values_op(self, state, scope, reuse=False):
@@ -110,8 +110,8 @@ class Linear(DQN):
         update_target_op will be called periodically 
         to copy Q network weights to target Q network
         """
-        q_variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=q_scope)
-        target_q_variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=target_q_scope)
+        q_variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=q_scope)
+        target_q_variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=target_q_scope)
         q_variables = sorted(q_variables, key=lambda x: x.name)
         target_q_variables = sorted(target_q_variables, key=lambda x: x.name)
         ops = []
@@ -136,9 +136,7 @@ class Linear(DQN):
         action_taken = tf.argmax(q)
         num_actions = self.env.action_space.n
         self.done_mask = tf.equal(action_taken, num_actions - 1)
-        print "Q SHAPE", q.get_shape().ndims
-        print "Pred SHAPE", pred.get_shape().ndims
-        pred_loss = tf.cast(self.done_mask, tf.float32)*tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.y, logits=pred)
+        pred_loss = tf.cast(self.done_mask, tf.float32)*tf.losses.sigmoid_cross_entropy(self.y, logits=pred)
         qsamp = self.r + self.config.gamma * tf.reduce_max(target_q, axis=1)
         qs = tf.reduce_sum(tf.one_hot(self.a, num_actions)*q, axis=1)
         self.loss = tf.reduce_mean(tf.squared_difference(qsamp, qs)) + tf.reduce_mean(pred_loss)
@@ -168,7 +166,7 @@ class Linear(DQN):
 
 if __name__ == '__main__':
     from configs.q3_nature import config
-    env = EnvTest((5, 5, 1))
+    env = EnvTest((6, 1, 1))
 
     # exploration strategy
     exp_schedule = LinearExploration(env, config.eps_begin, 
