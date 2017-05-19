@@ -40,18 +40,19 @@ class SimpleQN(DQN):
                - self.lr: learning rate, type = float32
         
          """
+        batch_size = 32
         image_width = state_shape[0]
         image_height = state_shape[1]
         channels = state_shape[2] * self.config.state_history
         self.s = tf.placeholder(tf.uint8,
-            (None, image_width, image_height, channels))
-        self.a = tf.placeholder(tf.int32, (None))
-        self.r = tf.placeholder(tf.float32, (None))
+            (batch_size, image_width, image_height, channels))
+        self.a = tf.placeholder(tf.int32, (batch_size))
+        self.r = tf.placeholder(tf.float32, (batch_size))
         self.sp = tf.placeholder(tf.uint8,
-            (None, image_width, image_height, channels))
-        self.done_mask = tf.placeholder(tf.bool, (None, ))
-        self.lr = tf.placeholder(tf.float32, None)
-        self.y = tf.placeholder(tf.int32, (None, 1))
+            (batch_size, image_width, image_height, channels))
+        self.done_mask = tf.placeholder(tf.bool, (batch_size, ))
+        self.lr = tf.placeholder(tf.float32, batch_size)
+        self.y = tf.placeholder(tf.int32, (batch_size, 1))
 
 
     def add_update_target_op(self, q_scope, target_q_scope):
@@ -80,10 +81,10 @@ class SimpleQN(DQN):
         """
         # you may need this variable
         action_taken = tf.argmax(q)
-        print(action_taken)
         num_actions = self.env.action_space.n
         # self.done_mask = tf.equal(action_taken, num_actions - 1)
-        pred_loss = tf.cast(self.done_mask, tf.float32)*tf.losses.sigmoid_cross_entropy(self.y, logits=pred)
+        # pred_loss = tf.cast(self.done_mask, tf.float32)*tf.losses.sigmoid_cross_entropy(self.y, logits=pred)
+        pred_loss = tf.losses.sigmoid_cross_entropy(self.y, logits=pred)
         qsamp = self.r + self.config.gamma * tf.reduce_max(target_q, axis=1)
         qs = tf.reduce_sum(tf.one_hot(self.a, num_actions)*q, axis=1)
         self.loss = tf.reduce_mean(tf.squared_difference(qsamp, qs)) + tf.reduce_mean(pred_loss)
