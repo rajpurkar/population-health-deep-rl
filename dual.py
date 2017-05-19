@@ -115,7 +115,7 @@ class SimpleQN(DQN):
             if self.config.k_class:
                 state_shape = list(self.env.observation_space.shape)
                 k = state_shape[0] + 1
-                pred = layers.fully_connected(common, k, activation_fn=tf.softmax)
+                pred = layers.fully_connected(common, k, activation_fn=None)
             else:
                 pred = layers.fully_connected(common, 1, activation_fn=tf.sigmoid)
             out = layers.fully_connected(common, num_actions, activation_fn=None)
