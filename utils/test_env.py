@@ -1,57 +1,50 @@
+from __future__ import print_function
+import random
 import numpy as np
+
+
+def sample_generate(feature_length):
+    x = [random.choice([0, 1]) for _ in range(feature_length)]
+    y = 1 if x[0] + x[1] == 2 else 0
+    return x, y
+
 
 class ActionSpace(object):
     def __init__(self, n):
         self.n = n
 
     def sample(self):
-        return np.random.randint(0, self.n)
-
+        return random.randint(0, self.n)
 
 class ObservationSpace(object):
     def __init__(self, shape):
         self.shape = shape
-        self.bad_state = np.random.randint(0, 50, shape, dtype=np.uint8)
-        self.normal_state = np.random.randint(100, 150, shape, dtype=np.uint8)
-        self.good_state = np.random.randint(200, 250, shape, dtype=np.uint8)
-        self.states = [self.bad_state, self.normal_state, self.good_state]
 
 
 class EnvTest(object):
     """
     Adapted from Igor Gitman, CMU / Karan Goel
     """
-    def __init__(self, shape=(84, 84, 3)):
+    def __init__(self, shape=(3, 1)):
         #3 states
-        self.rewards = [-0.1, 0, 0.1]
-        self.cur_state = 0
-        self.num_iters = 0
-        self.was_in_second = False
-        self.action_space = ActionSpace(4)
+        self.reward = 0
+        feature_length = shape[0]
+        self.num_actions = feature_length + 1
+        self.action_space = ActionSpace(self.num_actions)
         self.observation_space = ObservationSpace(shape)
-        
+        self.reset()
 
     def reset(self):
-        self.cur_state = 0
+        self.cur_state = np.array([-1, -1, -1]).reshape(-1, 1)
+        self.real_state, self.y = sample_generate(self.num_actions)
         self.num_iters = 0
-        self.was_in_second = False
-        return self.observation_space.states[self.cur_state]
-        
+        return self.cur_state
 
     def step(self, action):
-        assert(0 <= action <= 3)
+        assert(action < self.num_actions - 1)
         self.num_iters += 1
-        if action < 3:
-            self.cur_state = action
-        reward = self.rewards[self.cur_state]
-        if self.was_in_second is True:
-            reward *= -10
-        if self.cur_state == 1:
-            self.was_in_second = True
-        else:
-            self.was_in_second = False
-        return self.observation_space.states[self.cur_state], reward, self.num_iters >= 5, {'ale.lives':0}
-
+        self.cur_state[action] = self.real_state[action]
+        return self.cur_state, self.y, self.reward, self.num_iters >= self.num_actions, {'ale.lives':0}
 
     def render(self):
         print(self.cur_state)
