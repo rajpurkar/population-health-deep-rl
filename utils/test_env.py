@@ -49,10 +49,8 @@ class EnvTest(object):
         self.num_iters += 1
         done = self.num_iters >= self.feature_length or action == self.feature_length
         if done:
-            assert(self.y[int(np.sum(self.real_state[:self.first_n]))] == 1)
-            sum_of_first_n = int(np.sum(self.cur_state[:self.first_n]))
-            if sum_of_first_n >= 0 and self.y[sum_of_first_n] == 1:
-                self.reward = 10
+            if np.array_equal(self.real_state[:self.first_n], self.cur_state[:self.first_n]):
+                self.reward = 10.
             else:
                 self.reward = -10.
         else:
@@ -63,3 +61,7 @@ class EnvTest(object):
 
     def render(self):
         print(self.cur_state)
+
+
+if __name__ == '__main__':
+    sample_generate(10, True, 5)

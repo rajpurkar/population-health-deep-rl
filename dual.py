@@ -112,10 +112,8 @@ class SimpleQN(DQN):
         common = state
         with tf.variable_scope(scope, reuse):
             common = layers.flatten(common)
-            #common = layers.fully_connected(common, 24, activation_fn=tf.nn.relu)
-            common = layers.fully_connected(common, 10, activation_fn=tf.nn.relu)
-            common = layers.fully_connected(common, 10, activation_fn=tf.nn.relu)
-            common = layers.fully_connected(common, 10, activation_fn=tf.nn.relu)
+            common = layers.fully_connected(common, 24, activation_fn=tf.nn.relu)
+            common = layers.fully_connected(common, 48, activation_fn=tf.nn.relu)
             if self.config.k_class is True:
                 state_shape = list(self.env.observation_space.shape)
                 k = state_shape[0] + 1
