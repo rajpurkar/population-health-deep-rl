@@ -1,6 +1,8 @@
+from __future__ import print_function
+import random
 import numpy as np
 from utils.test_env import EnvTest
-import random
+
 
 class LinearSchedule(object):
     def __init__(self, eps_begin, eps_end, nsteps):
@@ -10,10 +12,10 @@ class LinearSchedule(object):
             eps_end: end exploration
             nsteps: number of steps between the two values of eps
         """
-        self.epsilon        = eps_begin
-        self.eps_begin      = eps_begin
-        self.eps_end        = eps_end
-        self.nsteps         = nsteps
+        self.epsilon = eps_begin
+        self.eps_begin = eps_begin
+        self.eps_end = eps_end
+        self.nsteps = nsteps
 
 
     def update(self, t):
@@ -23,34 +25,11 @@ class LinearSchedule(object):
         Args:
             t: (int) nth frames
         """
-        ##############################################################
-        """
-        TODO: modify self.epsilon such that 
-               for t = 0, self.epsilon = self.eps_begin
-               for t = self.nsteps, self.epsilon = self.eps_end
-               linear decay between the two
-
-              self.epsilon should never go under self.eps_end
-        """
-        ##############################################################
-        ################ YOUR CODE HERE - 3-4 lines ################## 
-
         slope = (self.eps_begin - self.eps_end)/float(self.nsteps)
         if t > self.nsteps:
             t = self.nsteps
         new_eps = self.eps_begin - t*slope
         self.epsilon = new_eps
-
-        # exp_lambda = -1 * np.log(float(self.eps_begin)/float(self.eps_end)) / float(self.nsteps)
-        # #print exp_lambda, "LALALA"
-        # if t > self.nsteps:
-        #     t = self.nsteps
-        # #print np.exp(exp_lambda*t), "dadada"
-        # self.epsilon = self.eps_begin*np.exp(exp_lambda*t)
-
-
-        ##############################################################
-        ######################## END YOUR CODE ############## ########
 
 
 class LinearExploration(LinearSchedule):
@@ -75,32 +54,15 @@ class LinearExploration(LinearSchedule):
         Returns:
             an action
         """
-        ##############################################################
-        """
-        TODO: with probability self.epsilon, return a random action
-               else, return best_action
-
-               you can access the environment stored in self.env
-               and epsilon with self.epsilon
-        """
-        ##############################################################
-        ################ YOUR CODE HERE - 4-5 lines ##################
-
         flip = np.random.random()
         action = best_action
         if flip < self.epsilon:
             action = self.env.action_space.sample()
         return action
 
-        ##############################################################
-        ######################## END YOUR CODE ############## ########
-
-
 
 def test1():
-    print "check 1!!!!!!"
     env = EnvTest((5, 5, 1))
-    print "whats happening"
     exp_strat = LinearExploration(env, 1, 0, 10)
     
     found_diff = False
@@ -125,37 +87,11 @@ def test3():
     env = EnvTest((5, 5, 1))
     exp_strat = LinearExploration(env, 1, 0.5, 10)
     exp_strat.update(20)
-    print exp_strat.epsilon
+    print(exp_strat.epsilon)
     assert exp_strat.epsilon == 0.5, "Test 3 failed"
-    print("Test3: ok")
-
-
-def your_test():
-    """
-    Use this to implement your own tests
-    """
-    env = EnvTest((5, 5, 1))
-    exp_strat = LinearExploration(env, 1, 0.5, 10)
-    exp_strat.update(20)
-    print exp_strat.epsilon
-    assert exp_strat.epsilon == 0.5, "Test 3 failed"
-    print("Test3: ok")
-
-
-def your_test_2():
-    """
-    Use this to implement your own tests
-    """
-    env = EnvTest((5, 5, 1))
-    exp_strat = LinearExploration(env, 1, 0.5, 10)
-    exp_strat.update(0)
-    print exp_strat.epsilon
-    assert exp_strat.epsilon == 1.0, "Test 3 failed"
     print("Test3: ok")
 
 if __name__ == "__main__":
     test1()
     test2()
     test3()
-    # your_test()
-    # your_test_2()
