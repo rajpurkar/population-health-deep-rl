@@ -1,13 +1,13 @@
 class config():
     # env config
-    render_train     = False
+    render_train     = True
     render_test      = False
     overwrite_render = True
     record           = False
-    high             = 255.
+    high             = 1.
 
     # output config
-    output_path  = "results/q3_nature/"
+    output_path  = "results/env_test/"
     model_output = output_path + "model.weights/"
     log_path     = output_path + "log.txt"
     plot_output  = output_path + "scores.png"
