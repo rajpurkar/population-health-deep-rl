@@ -28,7 +28,7 @@ class config():
     target_update_freq = 500
     gamma              = 0.99
     learning_freq      = 4
-    state_history      = 4
+    state_history      = 1
     lr_begin           = 0.00025
     lr_end             = 0.0001
     lr_nsteps          = nsteps_train/2
