@@ -176,7 +176,7 @@ class QN(object):
 
                 # chose action according to current Q and exploration
                 best_action, q_values = self.get_best_action(q_input)
-                action                = exp_schedule.get_action(best_action)
+                action                = exp_schedule.get_action(best_action, self.config.no_repeats)
 
                 # store q values
                 max_q_values.append(max(q_values))

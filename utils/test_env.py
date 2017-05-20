@@ -12,12 +12,13 @@ def sample_generate(feature_length, first_n):
 class ActionSpace(object):
     def __init__(self, n):
         self.n = n
-        self.rem_actions = range(n)
+        self.rem_actions = None
 
-    def sample(self):
+    def sample(self, no_repeat):
         if no_repeat is True:
-            return random.sample(rem_actions, 1)
-        return np.random.randint(0, self.n)
+            return random.choice(self.rem_actions)
+        else:
+            return np.random.randint(0, self.n)
 
 class ObservationSpace(object):
     def __init__(self, shape):
@@ -32,7 +33,7 @@ class EnvTest(object):
         self.num_classes = config.num_classes
         self.config = config
         self.feature_length = config.state_shape[0]
-        
+
         assert(self.config.max_steps <= self.feature_length)
         
         self.action_space = ActionSpace(self.feature_length + self.num_classes) # extra quit actions
