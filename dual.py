@@ -7,7 +7,7 @@ from utils.test_env import EnvTest
 from core.deep_q_learning import DQN
 
 
-class SimpleQN(DQN):
+class ActPredDQN(DQN):
     def add_placeholders_op(self):
         """
         Adds placeholders to the graph
@@ -109,8 +109,6 @@ Use deep Q network for test environment.
 """
 if __name__ == '__main__':
     from configs.test_env import config
-    num_features = 5
-    max_choices = 4
-    env = EnvTest((num_features, 1, 1), max_choices, config)
-    model = SimpleQN(env, config)
+    env = EnvTest(config)
+    model = ActPredDQN(env, config)
     model.run()

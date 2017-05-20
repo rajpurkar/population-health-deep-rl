@@ -178,8 +178,6 @@ class QN(object):
                 best_action, q_values = self.get_best_action(q_input)
                 action                = exp_schedule.get_action(best_action)
 
-                ## todo plug in prediction calculation here.
-
                 # store q values
                 max_q_values.append(max(q_values))
                 q_values += list(q_values)
@@ -292,9 +290,7 @@ class QN(object):
                 q_input = replay_buffer.encode_recent_observation()
 
                 action = self.get_action(q_input)
-                ## todo plug in prediction calculation here.
-
-
+                
                 # perform action in env
                 new_state, reward, done = env.step(action)
 

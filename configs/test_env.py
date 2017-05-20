@@ -2,8 +2,15 @@ import time
 
 class config():
     # env config
-    k_class = True
-    predict_fn_oracle = True
+    state_shape = (5, 1, 1)
+    max_steps = 4
+    num_classes= max_steps + 1
+
+    # reward config
+    correctAnswerReward = 10.
+    wrongAnswerReward = -1.
+    queryReward = -2.
+
     render_train     = False
     render_test      = False
     overwrite_render = True
