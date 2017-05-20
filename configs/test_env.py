@@ -6,6 +6,9 @@ class config():
     max_steps = 4
     num_classes= max_steps + 1
 
+    #exploration
+    no_repeats = True
+
     # reward config
     correctAnswerReward = 10.
     wrongAnswerReward = -1.
@@ -23,7 +26,7 @@ class config():
     log_path     = output_path + "log.txt"
     plot_output  = output_path + "scores.png"
 
-        # model and training config
+    # model and training config
     num_episodes_test = 50
     grad_clip         = True
     clip_val          = 10
