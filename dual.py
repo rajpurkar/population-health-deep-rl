@@ -129,6 +129,8 @@ Use deep Q network for test environment.
 """
 if __name__ == '__main__':
     from configs.test_env import config
-    env = EnvTest((5, 1, 1), config)
+    num_features = 5
+    max_choices = 4
+    env = EnvTest((num_features, 1, 1), max_choices, config)
     model = SimpleQN(env, config)
     model.run()
