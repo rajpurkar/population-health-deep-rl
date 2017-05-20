@@ -29,13 +29,13 @@ class config():
     batch_size         = 32
     buffer_size        = 100000
     target_update_freq = 1000
-    gamma              = 1
+    gamma              = 1.0
     learning_freq      = 1
     state_history      = 1
-    lr_begin           = 0.00025
+    lr_begin           = 0.00015
     lr_end             = 0.00005
-    lr_nsteps          = nsteps_train/2
+    lr_nsteps          = nsteps_train
     eps_begin          = 1
     eps_end            = 0.001
-    eps_nsteps         = nsteps_train/2
+    eps_nsteps         = nsteps_train
     learning_start     = 500

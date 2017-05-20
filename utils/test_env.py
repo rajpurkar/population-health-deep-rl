@@ -41,20 +41,20 @@ class EnvTest(object):
     def reset(self):
         self.real_state, self.y = sample_generate(self.feature_length, self.k_class, self.first_n)
         self.num_iters = 0
-        self.cur_state = np.ones((self.feature_length, 1, 1)) * -0.1
+        self.cur_state = np.ones((self.feature_length, 1, 1)) * -1
         return self.cur_state
 
     def step(self, action):
         assert(action < self.feature_length + 1)
         self.num_iters += 1
-        done = (self.num_iters >= self.feature_length) or (int(action) == self.feature_length)
+        done = (self.num_iters > self.first_n) or (int(action) == self.feature_length)
         if done is True:
             if np.all(self.cur_state[:self.first_n] >= 0):
                 self.reward = 10.
             else:
-                self.reward = -10.
+                self.reward = -1.
         else:
-            self.reward = -0.0
+            self.reward = -2.
             self.cur_state[action] = self.real_state[action]
         
         return self.cur_state, self.y, self.reward, done, {'ale.lives':0}
