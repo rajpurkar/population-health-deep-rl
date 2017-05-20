@@ -52,8 +52,11 @@ class EnvTest(object):
     def step(self, action):
         assert(action < self.feature_length + self.num_classes)
         self.num_iters += 1
-        if action in self.action_space.rem_actions:
+        assert(action in self.action_space.rem_actions)
+        
+        if self.config.no_repeats is True:
             self.action_space.rem_actions.remove(action)
+        
         done = (self.num_iters > self.max_steps) or (int(action) >= self.feature_length)
         if done is True:
             if self.y == int(action - self.feature_length):
