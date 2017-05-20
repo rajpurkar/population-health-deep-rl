@@ -35,6 +35,11 @@ class EnvTest(object):
         self.observation_space = ObservationSpace(shape)
         self.config = config
         self.max_choices = max_choices
+
+        self.correctAnswerReward = 10.
+        self.wrongAnswerReward = -1.
+        self.queryReward = -2.
+
         self.reset()
 
     def reset(self):
@@ -50,12 +55,13 @@ class EnvTest(object):
         self.num_iters += 1
         done = (self.num_iters > self.max_choices) or (int(action) == self.feature_length)
         if done is True:
-            if np.all(self.cur_state[:self.max_choices] >= 0):
-                self.reward = 10.
-            else:
-                self.reward = -1.
+            if self.config.predict_fn_oracle is True:
+                if np.all(self.cur_state[:self.max_choices] >= 0):
+                    self.reward = self.correctAnswerReward
+                else:
+                    self.reward = self.wrongAnswerReward
         else:
-            self.reward = -2.
+            self.reward = self.queryReward
             self.cur_state[action] = self.real_state[action]
         
         return self.cur_state, self.y, self.reward, done, {'ale.lives':0}

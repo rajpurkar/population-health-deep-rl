@@ -2,7 +2,8 @@ import time
 
 class config():
     # env config
-    k_class = False
+    k_class = True
+    predict_fn_oracle = True
     render_train     = False
     render_test      = False
     overwrite_render = True
@@ -32,7 +33,7 @@ class config():
     gamma              = 1.0
     learning_freq      = 1
     state_history      = 1
-    lr_begin           = 0.00015
+    lr_begin           = 0.00025
     lr_end             = 0.00005
     lr_nsteps          = nsteps_train
     eps_begin          = 1
