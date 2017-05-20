@@ -188,7 +188,7 @@ class DQN(QN):
             loss: (Q - Q_target)^2
         """
 
-        s_batch, a_batch, r_batch, y_batch, sp_batch, done_mask_batch = replay_buffer.sample(
+        s_batch, a_batch, r_batch, sp_batch, done_mask_batch = replay_buffer.sample(
             self.config.batch_size)
 
 
@@ -199,7 +199,6 @@ class DQN(QN):
             self.r: r_batch,
             self.sp: sp_batch, 
             self.done_mask: done_mask_batch,
-            self.y: y_batch,
             self.lr: lr, 
             # extra info
             self.avg_reward_placeholder: self.avg_reward, 

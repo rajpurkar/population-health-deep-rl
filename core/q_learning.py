@@ -176,7 +176,7 @@ class QN(object):
                 last_record += 1
                 if self.config.render_train: self.env.render()
                 # replay memory stuff
-                idx      = replay_buffer.store_frame(state, self.k)
+                idx      = replay_buffer.store_frame(state)
                 q_input = replay_buffer.encode_recent_observation()
 
                 # chose action according to current Q and exploration
@@ -190,9 +190,9 @@ class QN(object):
                 q_values += list(q_values)
 
                 # perform action in env
-                new_state, y, reward, done, info = self.env.step(action)
+                new_state, reward, done, info = self.env.step(action)
                 # store the transition
-                replay_buffer.store_effect(idx, action, reward, y, done)
+                replay_buffer.store_effect(idx, action, reward, done)
                 state = new_state
 
                 # perform a training step
@@ -293,7 +293,7 @@ class QN(object):
                 if self.config.render_test: env.render()
 
                 # store last state in buffer
-                idx     = replay_buffer.store_frame(state, self.k)
+                idx     = replay_buffer.store_frame(state)
                 q_input = replay_buffer.encode_recent_observation()
 
                 action = self.get_action(q_input)
@@ -301,10 +301,10 @@ class QN(object):
 
 
                 # perform action in env
-                new_state, y, reward, done, info = env.step(action)
+                new_state, reward, done, info = env.step(action)
 
                 # store in replay memory
-                replay_buffer.store_effect(idx, action, reward, y, done)
+                replay_buffer.store_effect(idx, action, reward, done)
                 state = new_state
 
                 # count reward

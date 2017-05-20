@@ -29,10 +29,6 @@ class SimpleQN(DQN):
             (batch_size, image_width, image_height, channels))
         self.done_mask = tf.placeholder(tf.bool, (batch_size, ))
         self.lr = tf.placeholder(tf.float32, batch_size)
-        if self.config.k_class is True:
-            self.y = tf.placeholder(tf.int32, (batch_size, self.env.prediction_space.n))
-        else:
-            self.y = tf.placeholder(tf.int32, (batch_size))
 
     def add_update_target_op(self, q_scope, target_q_scope):
         """
