@@ -11,9 +11,6 @@ class config():
     wrongAnswerReward = -1.
     queryReward = -2.
 
-    #exploration
-    no_repeats = True
-
     render_train     = False
     render_test      = False
     overwrite_render = True
@@ -26,7 +23,7 @@ class config():
     log_path     = output_path + "log.txt"
     plot_output  = output_path + "scores.png"
 
-    # model and training config
+        # model and training config
     num_episodes_test = 50
     grad_clip         = True
     clip_val          = 10

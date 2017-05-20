@@ -12,11 +12,8 @@ def sample_generate(feature_length, first_n):
 class ActionSpace(object):
     def __init__(self, n):
         self.n = n
-        self.rem_actions = range(n)
 
-    def sample(self, no_repeat=False):
-        if no_repeat is True:
-            return random.sample(rem_actions, 1)
+    def sample(self):
         return np.random.randint(0, self.n)
 
 class ObservationSpace(object):
@@ -45,16 +42,12 @@ class EnvTest(object):
             self.feature_length, self.max_steps) # will be replaced by real sampler
         self.num_iters = 0
         self.cur_state = np.ones((self.feature_length, 1, 1)) * -1
-        self.action_space.rem_actions = range(self.action_space.n)
         return self.cur_state
 
     def step(self, action):
         assert(action < self.feature_length + self.num_classes)
-        if action in self.action_space.rem_actions:
-            self.action_space.rem_actions.remove(action)
         self.num_iters += 1
         done = (self.num_iters > self.max_steps) or (int(action) >= self.feature_length)
-        #print ("In step: ", action, done)
         if done is True:
             if self.y == int(action - self.feature_length):
                 self.reward = self.config.correctAnswerReward
