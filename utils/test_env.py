@@ -3,14 +3,14 @@ import random
 import numpy as np
 
 
-def sample_generate(feature_length, is_k_class, first_n):
+def sample_generate(feature_length, first_n, is_k_class):
     x = [random.choice([0, 1]) for _ in range(feature_length)]
     if is_k_class is True:
-        y = [0] * (feature_length + 1)
+        y = np.zeros(first_n + 1)
         y[sum(x[:first_n])] = 1
     else:
-        y = 1 if x[0] + x[1] == 2 else 0
-    return x, y
+        y = 1 if sum(x[:first_n]) == first_n else 0
+    return np.array(x), y
 
 
 class ActionSpace(object):
@@ -28,18 +28,19 @@ class EnvTest(object):
     """
     Adapted from Igor Gitman, CMU / Karan Goel
     """
-    def __init__(self, shape, config=None):
-        #3 states
-        feature_length = shape[0]
-        self.feature_length = feature_length
+    def __init__(self, shape, max_choices, config=None):
+        self.feature_length = shape[0]
+        assert(max_choices <= self.feature_length)
         self.action_space = ActionSpace(self.feature_length + 1) # extra quit action
         self.observation_space = ObservationSpace(shape)
-        self.k_class = config is not None and config.k_class is True
-        self.first_n = 2
+        self.config = config
+        self.max_choices = max_choices
         self.reset()
 
     def reset(self):
-        self.real_state, self.y = sample_generate(self.feature_length, self.k_class, self.first_n)
+        self.k_class = self.config is not None and self.config.k_class is True
+        self.real_state, self.y = sample_generate(
+            self.feature_length, self.k_class, self.max_choices)
         self.num_iters = 0
         self.cur_state = np.ones((self.feature_length, 1, 1)) * -1
         return self.cur_state
@@ -47,9 +48,9 @@ class EnvTest(object):
     def step(self, action):
         assert(action < self.feature_length + 1)
         self.num_iters += 1
-        done = (self.num_iters > self.first_n) or (int(action) == self.feature_length)
+        done = (self.num_iters > self.max_choices) or (int(action) == self.feature_length)
         if done is True:
-            if np.all(self.cur_state[:self.first_n] >= 0):
+            if np.all(self.cur_state[:self.max_choices] >= 0):
                 self.reward = 10.
             else:
                 self.reward = -1.
@@ -61,3 +62,8 @@ class EnvTest(object):
 
     def render(self):
         print(self.cur_state)
+
+if __name__ == '__main__':
+    for is_k in [False, True]:
+        for i in range(20):
+            print(sample_generate(4, 2, is_k))
