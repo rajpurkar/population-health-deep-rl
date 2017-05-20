@@ -47,7 +47,7 @@ class SimpleQN(DQN):
         self.update_target_op = tf.group(*ops, name="update_target_op")
 
 
-    def add_loss_op(self, q, target_q, pred):
+    def add_loss_op(self, q, target_q):
         """
         Sets the loss of a batch, self.loss is a scalar
 
@@ -55,15 +55,6 @@ class SimpleQN(DQN):
             q: (tf tensor) shape = (batch_size, num_actions)
             target_q: (tf tensor) shape = (batch_size, num_actions)
         """
-        # you may need this variable
-        """
-        # action_taken = tf.argmax(q)
-        self.loss = tf.reduce_mean(tf.squared_difference(qsamp, qs)) + tf.reduce_mean(pred_loss)
-        """
-        if self.config.k_class:
-            pred_loss = tf.losses.softmax_cross_entropy(self.y, logits=pred)
-        else:
-            pred_loss = tf.losses.sigmoid_cross_entropy(self.y, logits=pred)
         num_actions = self.env.action_space.n
         q_samp = self.r + (1.0 - tf.cast(self.done_mask, tf.float32)) * self.config.gamma * tf.reduce_max(target_q, axis=1)
         q_sa = tf.reduce_sum(tf.multiply(q, tf.one_hot(self.a, num_actions, axis=1)), axis=1)
@@ -106,20 +97,39 @@ class SimpleQN(DQN):
             out: (tf tensor) of shape = (batch_size, num_actions)
         """
         num_actions = self.env.action_space.n
-        common = state
+        out = state
         with tf.variable_scope(scope, reuse):
-            common = layers.flatten(common)
-            common = layers.fully_connected(common, 64)
-            common = layers.fully_connected(common, 64)
-            if self.config.k_class is True:
-                state_shape = list(self.env.observation_space.shape)
-                k = state_shape[0] + 1
-                pred = layers.fully_connected(common, k, activation_fn=None)
-            else:
-                pred = layers.fully_connected(common, 1, activation_fn=tf.sigmoid)
-            out = layers.fully_connected(common, num_actions, activation_fn=None)
-        return out, pred
+            out = layers.flatten(out)
+            out = layers.fully_connected(out, 64)
+            out = layers.fully_connected(out, 64)
+            out = layers.fully_connected(out, num_actions, activation_fn=None)
+        return out
 
+
+    def get_prediction_op(self, state, scope, reuse=False):
+        """
+        Returns prediction for state
+
+        Args:
+            state: (tf tensor) 
+                shape = (batch_size, img height, img width, nchannels)
+            scope: (string) scope name, that specifies if target network or not
+            reuse: (bool) reuse of variables in the scope
+         """
+        with tf.variable_scope(scope, reuse):
+            out = layers.flatten(state)
+            out = layers.fully_connected(out, 64)
+            if self.config.k_class is True:
+                pred = layers.fully_connected(
+                    out,
+                    self.env.prediction_space.n,
+                    activation_fn=None)
+            else:
+                pred = layers.fully_connected(
+                    out,
+                    1,
+                    activation_fn=tf.sigmoid)
+        return pred
 
 """
 Use deep Q network for test environment.

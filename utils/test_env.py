@@ -13,6 +13,11 @@ def sample_generate(feature_length, first_n, is_k_class):
     return np.array(x), y
 
 
+class PredictionSpace(object):
+    def __init__(self, n):
+        self.n = n
+
+
 class ActionSpace(object):
     def __init__(self, n):
         self.n = n
@@ -34,7 +39,9 @@ class EnvTest(object):
         self.action_space = ActionSpace(self.feature_length + 1) # extra quit action
         self.observation_space = ObservationSpace(shape)
         self.config = config
+
         self.max_choices = max_choices
+        self.prediction_space = PredictionSpace(self.max_choices + 1) # extra quit action
 
         self.correctAnswerReward = 10.
         self.wrongAnswerReward = -1.
