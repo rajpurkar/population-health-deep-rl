@@ -89,7 +89,8 @@ class QN(object):
             state: observation from gym
         """
         if np.random.random() < self.config.soft_epsilon:
-            return self.env.action_space.sample(self.config.no_repeats)
+            #return self.env.action_space.sample(self.config.no_repeats)
+            return self.env.action_space.sample()
         else:
             return self.get_best_action(state)[0]
 
@@ -165,6 +166,7 @@ class QN(object):
         while t < self.config.nsteps_train:
             total_reward = 0
             state = self.env.reset()
+            print "Episode Start"
             while True:
                 t += 1
                 last_eval += 1
@@ -178,6 +180,9 @@ class QN(object):
                 best_action, q_values = self.get_best_action(q_input)
                 action                = exp_schedule.get_action(best_action, self.config.no_repeats)
 
+                print (best_action, action, self.env.action_space.rem_actions)
+                if action not in self.env.action_space.rem_actions:
+                    print ("Check random: ", action not in self.env.action_space.rem_actions)
                 # store q values
                 max_q_values.append(max(q_values))
                 q_values += list(q_values)
@@ -282,6 +287,7 @@ class QN(object):
         for i in range(num_episodes):
             total_reward = 0
             state = env.reset()
+            print "Start eval ep"
             while True:
                 if self.config.render_test: env.render()
 
@@ -290,7 +296,7 @@ class QN(object):
                 q_input = replay_buffer.encode_recent_observation()
 
                 action = self.get_action(q_input)
-                
+                print (action, env.action_space.rem_actions)
                 # perform action in env
                 new_state, reward, done = env.step(action)
 

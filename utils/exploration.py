@@ -49,7 +49,8 @@ class LinearExploration(LinearSchedule):
             an action
         """
         if random.random() < self.epsilon:
-            action = self.env.action_space.sample(no_repeats)
+            #action = self.env.action_space.sample(no_repeats)
+            action = self.env.action_space.sample()
         else:
             action = best_action
         return action
