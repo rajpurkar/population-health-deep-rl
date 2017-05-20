@@ -33,11 +33,6 @@ class QN(object):
         if logger is None:
             self.logger = get_logger(config.log_path)
         self.env = env
-        if self.config.k_class is True:
-            self.k = self.env.prediction_space.n
-        else:
-            self.k = None
-
         # build model
         self.build()
 
@@ -176,27 +171,25 @@ class QN(object):
                 last_record += 1
                 if self.config.render_train: self.env.render()
                 # replay memory stuff
-                idx      = replay_buffer.store_frame(state, self.k)
+                idx      = replay_buffer.store_frame(state)
                 q_input = replay_buffer.encode_recent_observation()
 
                 # chose action according to current Q and exploration
                 best_action, q_values = self.get_best_action(q_input)
                 action                = exp_schedule.get_action(best_action)
 
-                ## todo plug in prediction calculation here.
-
                 # store q values
                 max_q_values.append(max(q_values))
                 q_values += list(q_values)
 
                 # perform action in env
-                new_state, y, reward, done, info = self.env.step(action)
+                new_state, reward, done = self.env.step(action)
                 # store the transition
-                replay_buffer.store_effect(idx, action, reward, y, done)
+                replay_buffer.store_effect(idx, action, reward, done)
                 state = new_state
 
                 # perform a training step
-                loss_eval, grad_eval, pred_loss_eval, pred_grad_loss_eval = self.train_step(t, replay_buffer, lr_schedule.epsilon)
+                loss_eval, grad_eval = self.train_step(t, replay_buffer, lr_schedule.epsilon)
 
                 # logging stuff
                 if ((t > self.config.learning_start) and (t % self.config.log_freq == 0) and
@@ -205,9 +198,9 @@ class QN(object):
                     exp_schedule.update(t)
                     lr_schedule.update(t)
                     if len(rewards) > 0:
-                        prog.update(t + 1, exact=[("Q Loss", loss_eval), ("Pred Loss", pred_loss_eval), ("Avg R", self.avg_reward), 
+                        prog.update(t + 1, exact=[("Q Loss", loss_eval), ("Avg R", self.avg_reward), 
                                         ("Max R", np.max(rewards)), ("eps", exp_schedule.epsilon), 
-                                        ("Q Grads", grad_eval), ("Pred Grads", pred_grad_loss_eval),
+                                        ("Q Grads", grad_eval),
                                         ("Max Q", self.max_q), ("lr", lr_schedule.epsilon)])
 
                 elif (t < self.config.learning_start) and (t % self.config.log_freq == 0):
@@ -250,11 +243,11 @@ class QN(object):
             replay_buffer: buffer for sampling
             lr: (float) learning rate
         """
-        loss_eval, grad_eval, pred_loss_eval, pred_grad_loss_eval = 0, 0, 0, 0
+        loss_eval, grad_eval = 0, 0
 
         # perform training step
         if (t > self.config.learning_start and t % self.config.learning_freq == 0):
-            loss_eval, grad_eval, pred_loss_eval, pred_grad_loss_eval = self.update_step(t, replay_buffer, lr)
+            loss_eval, grad_eval = self.update_step(t, replay_buffer, lr)
 
         # occasionaly update target network with q network
         if t % self.config.target_update_freq == 0:
@@ -264,7 +257,7 @@ class QN(object):
         if (t % self.config.saving_freq == 0):
             self.save()
 
-        return loss_eval, grad_eval, pred_loss_eval, pred_grad_loss_eval
+        return loss_eval, grad_eval
 
 
     def evaluate(self, env=None, num_episodes=None):
@@ -293,18 +286,16 @@ class QN(object):
                 if self.config.render_test: env.render()
 
                 # store last state in buffer
-                idx     = replay_buffer.store_frame(state, self.k)
+                idx     = replay_buffer.store_frame(state)
                 q_input = replay_buffer.encode_recent_observation()
 
                 action = self.get_action(q_input)
-                ## todo plug in prediction calculation here.
-
-
+                
                 # perform action in env
-                new_state, y, reward, done, info = env.step(action)
+                new_state, reward, done = env.step(action)
 
                 # store in replay memory
-                replay_buffer.store_effect(idx, action, reward, y, done)
+                replay_buffer.store_effect(idx, action, reward, done)
                 state = new_state
 
                 # count reward

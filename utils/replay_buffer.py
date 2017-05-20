@@ -51,7 +51,6 @@ class ReplayBuffer(object):
         self.obs      = None
         self.action   = None
         self.reward   = None
-        self.y        = None
         self.done     = None
 
     def can_sample(self, batch_size):
@@ -62,11 +61,10 @@ class ReplayBuffer(object):
         obs_batch      = np.concatenate([self._encode_observation(idx)[None] for idx in idxes], 0)
         act_batch      = self.action[idxes]
         rew_batch      = self.reward[idxes]
-        y_batch        = self.y[idxes]
         next_obs_batch = np.concatenate([self._encode_observation(idx + 1)[None] for idx in idxes], 0)
         done_mask      = np.array([1.0 if self.done[idx] else 0.0 for idx in idxes], dtype=np.float32)
 
-        return obs_batch, act_batch, rew_batch, y_batch, next_obs_batch, done_mask
+        return obs_batch, act_batch, rew_batch, next_obs_batch, done_mask
 
 
     def sample(self, batch_size):
@@ -145,7 +143,7 @@ class ReplayBuffer(object):
             img_h, img_w = self.obs.shape[1], self.obs.shape[2]
             return self.obs[start_idx:end_idx].transpose(1, 2, 0, 3).reshape(img_h, img_w, -1)
 
-    def store_frame(self, frame, ydim):
+    def store_frame(self, frame):
         """Store a single frame in the buffer at the next available index, overwriting
         old frames if necessary.
 
@@ -165,10 +163,6 @@ class ReplayBuffer(object):
             self.action   = np.empty([self.size],                     dtype=np.int32)
             self.reward   = np.empty([self.size],                     dtype=np.float32)
             self.done     = np.empty([self.size],                     dtype=np.bool)
-            if ydim != None:
-                self.y        = np.empty([self.size, ydim],                     dtype=np.int32)
-            else:
-                self.y        = np.empty([self.size],                     dtype=np.int32)
         self.obs[self.next_idx] = frame
 
         ret = self.next_idx
@@ -177,7 +171,7 @@ class ReplayBuffer(object):
 
         return ret
 
-    def store_effect(self, idx, action, reward, y, done):
+    def store_effect(self, idx, action, reward, done):
         """Store effects of action taken after obeserving frame stored
         at index idx. The reason `store_frame` and `store_effect` is broken
         up into two functions is so that once can call `encode_recent_observation`
@@ -196,6 +190,5 @@ class ReplayBuffer(object):
         """
         self.action[idx] = action
         self.reward[idx] = reward
-        self.y[idx] = y
         self.done[idx]   = done
 
