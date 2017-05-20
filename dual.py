@@ -112,8 +112,8 @@ class SimpleQN(DQN):
         common = state
         with tf.variable_scope(scope, reuse):
             common = layers.flatten(common)
-            common = layers.fully_connected(common, 24, activation_fn=tf.nn.relu)
-            common = layers.fully_connected(common, 48, activation_fn=tf.nn.relu)
+            common = layers.fully_connected(common, 64)
+            common = layers.fully_connected(common, 64)
             if self.config.k_class is True:
                 state_shape = list(self.env.observation_space.shape)
                 k = state_shape[0] + 1
@@ -129,6 +129,6 @@ Use deep Q network for test environment.
 """
 if __name__ == '__main__':
     from configs.test_env import config
-    env = EnvTest((10, 1, 1), config)
+    env = EnvTest((5, 1, 1), config)
     model = SimpleQN(env, config)
     model.run()

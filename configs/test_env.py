@@ -15,28 +15,27 @@ class config():
     log_path     = output_path + "log.txt"
     plot_output  = output_path + "scores.png"
 
-    # model and training config
-    num_episodes_test = 20
+        # model and training config
+    num_episodes_test = 50
     grad_clip         = True
     clip_val          = 10
-    saving_freq       = 5000
+    saving_freq       = 250000
     log_freq          = 50
-    eval_freq         = 100
-    soft_epsilon      = 0
+    eval_freq         = 25000
+    soft_epsilon      = 0.
 
-    # hyper params
-    nsteps_train       = 2000
+    # nature paper hyper params
+    nsteps_train       = 500000
     batch_size         = 32
-    buffer_size        = 500
-    target_update_freq = 100
-    gamma              = 0.99
-    learning_freq      = 4
+    buffer_size        = 100000
+    target_update_freq = 1000
+    gamma              = 1
+    learning_freq      = 1
     state_history      = 1
     lr_begin           = 0.00025
-    lr_end             = 0.0001
+    lr_end             = 0.00005
     lr_nsteps          = nsteps_train/2
     eps_begin          = 1
-    eps_end            = 0.01
+    eps_end            = 0.001
     eps_nsteps         = nsteps_train/2
-    learning_start     = 200
-    
+    learning_start     = 500

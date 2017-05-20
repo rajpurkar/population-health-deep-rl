@@ -35,21 +35,21 @@ class EnvTest(object):
         self.action_space = ActionSpace(self.feature_length + 1) # extra quit action
         self.observation_space = ObservationSpace(shape)
         self.k_class = config is not None and config.k_class is True
-        self.first_n = 5
+        self.first_n = 2
         self.reset()
 
     def reset(self):
         self.real_state, self.y = sample_generate(self.feature_length, self.k_class, self.first_n)
         self.num_iters = 0
-        self.cur_state = np.ones((self.feature_length, 1, 1)) * -1
+        self.cur_state = np.ones((self.feature_length, 1, 1)) * -0.1
         return self.cur_state
 
     def step(self, action):
         assert(action < self.feature_length + 1)
         self.num_iters += 1
-        done = self.num_iters >= self.feature_length or action == self.feature_length
-        if done:
-            if np.array_equal(self.real_state[:self.first_n], self.cur_state[:self.first_n]):
+        done = (self.num_iters >= self.feature_length) or (int(action) == self.feature_length)
+        if done is True:
+            if np.all(self.cur_state[:self.first_n] >= 0):
                 self.reward = 10.
             else:
                 self.reward = -10.
@@ -61,7 +61,3 @@ class EnvTest(object):
 
     def render(self):
         print(self.cur_state)
-
-
-if __name__ == '__main__':
-    sample_generate(10, True, 5)
