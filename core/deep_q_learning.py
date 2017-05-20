@@ -75,20 +75,26 @@ class DQN(QN):
 
         # compute Q values of state
         s = self.process_state(self.s)
-        self.q = self.get_q_values_op(s, scope="q", reuse=False)
+        self.q = self.get_q_values_op(
+            s, scope="q", reuse=False)
+        self.pred = self.get_prediction_op(
+            s, scope="pred", reuse=False)
 
         # compute Q values of next state
         sp = self.process_state(self.sp)
-        self.target_q = self.get_q_values_op(sp, scope="target_q", reuse=False)
+        self.target_q = self.get_q_values_op(
+            sp, scope="target_q", reuse=False)
 
         # add update operator for target network
         self.add_update_target_op("q", "target_q")
 
         # add square loss
         self.add_loss_op(self.q, self.target_q)
+        self.add_pred_loss_op(self.pred, self.y)
 
         # add optmizer for the main networks
         self.add_optimizer_op("q")
+        self.add_pred_optimizer_op("pred")
 
 
     def initialize(self):
@@ -122,15 +128,17 @@ class DQN(QN):
         self.max_reward_placeholder = tf.placeholder(tf.float32, shape=(), name="max_reward")
         self.std_reward_placeholder = tf.placeholder(tf.float32, shape=(), name="std_reward")
 
-        self.avg_q_placeholder  = tf.placeholder(tf.float32, shape=(), name="avg_q")
-        self.max_q_placeholder  = tf.placeholder(tf.float32, shape=(), name="max_q")
-        self.std_q_placeholder  = tf.placeholder(tf.float32, shape=(), name="std_q")
+        self.avg_q_placeholder = tf.placeholder(tf.float32, shape=(), name="avg_q")
+        self.max_q_placeholder = tf.placeholder(tf.float32, shape=(), name="max_q")
+        self.std_q_placeholder = tf.placeholder(tf.float32, shape=(), name="std_q")
 
         self.eval_reward_placeholder = tf.placeholder(tf.float32, shape=(), name="eval_reward")
 
         # add placeholders from the graph
         tf.summary.scalar("loss", self.loss)
+        tf.summary.scalar("pred_loss", self.pred_loss)
         tf.summary.scalar("grads_norm", self.grad_norm)
+        tf.summary.scalar("pred_grads_norm", self.pred_grad_norm)
 
         # extra summaries from python -> placeholders
         tf.summary.scalar("Avg_Reward", self.avg_reward_placeholder)
@@ -209,14 +217,14 @@ class DQN(QN):
             self.eval_reward_placeholder: self.eval_reward, 
         }
 
-        loss_eval, grad_norm_eval, summary, _ = self.sess.run([self.loss, self.grad_norm, 
-                                                 self.merged, self.train_op], feed_dict=fd)
+        loss_eval, grad_norm_eval, pred_loss_eval, pred_grad_loss_eval, summary, _ = self.sess.run(
+            [self.loss, self.grad_norm, self.pred_loss, self.pred_grad_norm, self.merged, self.train_op], feed_dict=fd)
 
 
         # tensorboard stuff
         self.file_writer.add_summary(summary, t)
         
-        return loss_eval, grad_norm_eval
+        return loss_eval, grad_norm_eval, pred_loss_eval, pred_grad_loss_eval
 
 
     def update_target_params(self):

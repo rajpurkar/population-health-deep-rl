@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 import tensorflow.contrib.layers as layers
 
 from utils.general import get_logger
@@ -28,8 +29,10 @@ class SimpleQN(DQN):
             (batch_size, image_width, image_height, channels))
         self.done_mask = tf.placeholder(tf.bool, (batch_size, ))
         self.lr = tf.placeholder(tf.float32, batch_size)
-        self.y = tf.placeholder(tf.int32, (batch_size))
-
+        if self.config.k_class is True:
+            self.y = tf.placeholder(tf.int32, (batch_size, self.env.prediction_space.n))
+        else:
+            self.y = tf.placeholder(tf.int32, (batch_size))
 
     def add_update_target_op(self, q_scope, target_q_scope):
         """
@@ -105,6 +108,36 @@ class SimpleQN(DQN):
             out = layers.fully_connected(out, num_actions, activation_fn=None)
         return out
 
+    def get_prediction(self, state):
+        """
+        Returns action with some epsilon strategy
+
+        Args:
+            state: observation from gym
+        """
+        if self.config.k_class is True:
+            if np.random.random() < self.config.soft_epsilon:
+                return self.env.prediction_space.sample()
+            else:
+                return self.get_best_prediction(state)[0]
+        else:
+            raise NotImplementedError
+
+    def get_best_prediction(self, state):
+        """
+        Return best action
+
+        Args:
+            state: 4 consecutive observations from gym
+        Returns:
+            action: (int)
+            action_values: (np array) q values for all actions
+        """
+        predictions = self.sess.run(self.pred, feed_dict={self.s: [state]})[0]
+        if self.config.k_class is True:
+            return np.argmax(predictions), predictions
+        else:
+            raise NotImplementedError
 
     def get_prediction_op(self, state, scope, reuse=False):
         """
@@ -130,6 +163,33 @@ class SimpleQN(DQN):
                     1,
                     activation_fn=tf.sigmoid)
         return pred
+
+    def add_pred_loss_op(self, pred, y):
+        self.pred_loss = tf.reduce_mean(
+            tf.nn.softmax_cross_entropy_with_logits(
+                logits=pred, labels=y, name='pred_loss'))
+
+
+    def add_pred_optimizer_op(self, scope):
+        """
+        Set self.train_op and self.grad_norm
+        """
+        optimizer = tf.train.AdamOptimizer(learning_rate=self.lr)
+        variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope)
+        grads_and_vars = optimizer.compute_gradients(self.pred_loss, variables)
+
+        if self.config.grad_clip:
+            capped_gv = []
+            for g, v in grads_and_vars:
+                if g is not None:
+                    capped_gv.append((tf.clip_by_norm(g, self.config.clip_val), v))
+            grads_and_vars = capped_gv
+
+        self.pred_train_op = optimizer.apply_gradients(grads_and_vars)
+
+        grads = [g for g, v in grads_and_vars]
+
+        self.pred_grad_norm = tf.global_norm(grads)
 
 """
 Use deep Q network for test environment.

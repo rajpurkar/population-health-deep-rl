@@ -8,6 +8,7 @@ def sample_generate(feature_length, first_n, is_k_class):
     if is_k_class is True:
         y = np.zeros(first_n + 1)
         y[sum(x[:first_n])] = 1
+        assert(np.sum(y) == 1) # valid prob distribution
     else:
         y = 1 if sum(x[:first_n]) == first_n else 0
     return np.array(x), y
@@ -16,6 +17,9 @@ def sample_generate(feature_length, first_n, is_k_class):
 class PredictionSpace(object):
     def __init__(self, n):
         self.n = n
+
+    def sample(self):
+        return np.random.randint(0, self.n)
 
 
 class ActionSpace(object):
