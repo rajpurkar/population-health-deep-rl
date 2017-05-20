@@ -173,6 +173,17 @@ class DQN(QN):
             action_values: (np array) q values for all actions
         """
         action_values = self.sess.run(self.q, feed_dict={self.s: [state]})[0]
+        if self.config.no_repeats is True:
+            best_actions = np.argsort(action_values)
+            idx = -1
+            best_action = best_actions[idx]
+            #print(np.argsort(action_values), best_actions)
+            while best_action not in self.env.action_space.rem_actions:
+                idx-=1
+                assert (idx*-1 <= len(best_actions)), "Implies all actions were taken but hasn't quit"
+                best_action = best_actions[idx]
+            #print best_action
+            return best_action, action_values
         return np.argmax(action_values), action_values
 
 

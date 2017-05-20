@@ -89,7 +89,7 @@ class QN(object):
             state: observation from gym
         """
         if np.random.random() < self.config.soft_epsilon:
-            return self.env.action_space.sample()
+            return self.env.action_space.sample(self.config.no_repeats)
         else:
             return self.get_best_action(state)[0]
 
