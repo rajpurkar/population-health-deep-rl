@@ -57,16 +57,13 @@ class SimpleQN(DQN):
         """
         # you may need this variable
         """
+        # action_taken = tf.argmax(q)
+        self.loss = tf.reduce_mean(tf.squared_difference(qsamp, qs)) + tf.reduce_mean(pred_loss)
+        """
         if self.config.k_class:
             pred_loss = tf.losses.softmax_cross_entropy(self.y, logits=pred)
         else:
             pred_loss = tf.losses.sigmoid_cross_entropy(self.y, logits=pred)
-        # action_taken = tf.argmax(q)
-        num_actions = self.env.action_space.n
-        qsamp = self.r + self.config.gamma * tf.reduce_max(target_q, axis=1) * tf.cast()
-        qs = tf.reduce_sum(tf.one_hot(self.a, num_actions)*q, axis=1)
-        self.loss = tf.reduce_mean(tf.squared_difference(qsamp, qs)) + tf.reduce_mean(pred_loss)
-        """
         num_actions = self.env.action_space.n
         q_samp = self.r + (1.0 - tf.cast(self.done_mask, tf.float32)) * self.config.gamma * tf.reduce_max(target_q, axis=1)
         q_sa = tf.reduce_sum(tf.multiply(q, tf.one_hot(self.a, num_actions, axis=1)), axis=1)
