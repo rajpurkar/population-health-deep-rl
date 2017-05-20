@@ -75,7 +75,7 @@ class EnvTest(object):
             self.reward = self.queryReward
             self.cur_state[action] = self.real_state[action]
         
-        return self.cur_state, self.reward, done, {'ale.lives':0}
+        return self.cur_state, self.reward, done
 
     def render(self):
         print(self.cur_state)

@@ -33,11 +33,6 @@ class QN(object):
         if logger is None:
             self.logger = get_logger(config.log_path)
         self.env = env
-        if self.config.k_class is True:
-            self.k = self.env.prediction_space.n
-        else:
-            self.k = None
-
         # build model
         self.build()
 
@@ -190,7 +185,7 @@ class QN(object):
                 q_values += list(q_values)
 
                 # perform action in env
-                new_state, reward, done, info = self.env.step(action)
+                new_state, reward, done = self.env.step(action)
                 # store the transition
                 replay_buffer.store_effect(idx, action, reward, done)
                 state = new_state
@@ -301,7 +296,7 @@ class QN(object):
 
 
                 # perform action in env
-                new_state, reward, done, info = env.step(action)
+                new_state, reward, done = env.step(action)
 
                 # store in replay memory
                 replay_buffer.store_effect(idx, action, reward, done)
