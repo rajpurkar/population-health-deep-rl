@@ -196,7 +196,7 @@ class QN(object):
                 state = new_state
 
                 # perform a training step
-                loss_eval, grad_eval, pred_loss_eval, pred_grad_loss_eval = self.train_step(t, replay_buffer, lr_schedule.epsilon)
+                loss_eval, grad_eval = self.train_step(t, replay_buffer, lr_schedule.epsilon)
 
                 # logging stuff
                 if ((t > self.config.learning_start) and (t % self.config.log_freq == 0) and
@@ -205,9 +205,9 @@ class QN(object):
                     exp_schedule.update(t)
                     lr_schedule.update(t)
                     if len(rewards) > 0:
-                        prog.update(t + 1, exact=[("Q Loss", loss_eval), ("Pred Loss", pred_loss_eval), ("Avg R", self.avg_reward), 
+                        prog.update(t + 1, exact=[("Q Loss", loss_eval), ("Avg R", self.avg_reward), 
                                         ("Max R", np.max(rewards)), ("eps", exp_schedule.epsilon), 
-                                        ("Q Grads", grad_eval), ("Pred Grads", pred_grad_loss_eval),
+                                        ("Q Grads", grad_eval),
                                         ("Max Q", self.max_q), ("lr", lr_schedule.epsilon)])
 
                 elif (t < self.config.learning_start) and (t % self.config.log_freq == 0):
@@ -250,11 +250,11 @@ class QN(object):
             replay_buffer: buffer for sampling
             lr: (float) learning rate
         """
-        loss_eval, grad_eval, pred_loss_eval, pred_grad_loss_eval = 0, 0, 0, 0
+        loss_eval, grad_eval = 0, 0
 
         # perform training step
         if (t > self.config.learning_start and t % self.config.learning_freq == 0):
-            loss_eval, grad_eval, pred_loss_eval, pred_grad_loss_eval = self.update_step(t, replay_buffer, lr)
+            loss_eval, grad_eval = self.update_step(t, replay_buffer, lr)
 
         # occasionaly update target network with q network
         if t % self.config.target_update_freq == 0:
@@ -264,7 +264,7 @@ class QN(object):
         if (t % self.config.saving_freq == 0):
             self.save()
 
-        return loss_eval, grad_eval, pred_loss_eval, pred_grad_loss_eval
+        return loss_eval, grad_eval
 
 
     def evaluate(self, env=None, num_episodes=None):
