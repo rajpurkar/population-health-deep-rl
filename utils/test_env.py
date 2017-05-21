@@ -14,12 +14,10 @@ class ActionSpace(object):
         self.n = n
         self.rem_actions = None
 
-    def sample(self, no_repeat=False):
-        assert(no_repeat==False), "Shouldn't be being called"
-        if no_repeat is True:
-            return random.choice(self.rem_actions)
+    def sample(self, no_sample_repeats=False):
+        if no_sample_repeats is True:
+             return random.choice(self.rem_actions)
         else:
-            print ("Random")
             return np.random.randint(0, self.n)
 
 class ObservationSpace(object):
@@ -54,9 +52,8 @@ class EnvTest(object):
     def step(self, action):
         assert(action < self.feature_length + self.num_classes)
         self.num_iters += 1
-        #assert(action in self.action_space.rem_actions)
         
-        if self.config.no_repeats is True:
+        if self.config.no_repeats is True or self.config.no_sample_repeats is True:
             if action in self.action_space.rem_actions:
                 self.action_space.rem_actions.remove(action)
         

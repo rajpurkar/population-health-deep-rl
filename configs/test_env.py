@@ -8,6 +8,7 @@ class config():
 
     #exploration
     no_repeats = True
+    no_sample_repeats = False
 
     # reward config
     correctAnswerReward = 10.

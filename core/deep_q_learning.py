@@ -182,7 +182,8 @@ class DQN(QN):
                 assert (idx*-1 <= len(best_actions)), "Implies all actions were taken but hasn't quit"
                 best_action = best_actions[idx]
             return best_action, action_values
-        return np.argmax(action_values), action_values
+        else:
+            return np.argmax(action_values), action_values
 
 
     def update_step(self, t, replay_buffer, lr):
