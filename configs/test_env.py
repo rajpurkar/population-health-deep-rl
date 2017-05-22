@@ -32,11 +32,11 @@ class config():
     plot_output  = output_path + "scores.png"
 
     # model and training config
-    num_episodes_test = 50
+    num_episodes_test = 100
     grad_clip         = True
     clip_val          = 10
     saving_freq       = 50000
-    log_freq          = 50
+    log_freq          = 100
     eval_freq         = 5000
     soft_epsilon      = 0.
 
