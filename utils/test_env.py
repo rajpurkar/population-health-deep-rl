@@ -3,7 +3,7 @@ import random
 import numpy as np
 
 
-def sample_generate(feature_length, first_n):
+def sample_generate(feature_length=None, first_n=None):
     assert(first_n <= feature_length)
     x = [random.choice([0, 1]) for _ in range(feature_length)]
     y = sum(x[:first_n])
@@ -43,7 +43,7 @@ class EnvTest(object):
 
     def reset(self):
         self.real_state, self.y = sample_generate(
-            self.feature_length, self.max_steps) # will be replaced by real sampler
+            self.feature_length, self.config.neccessary_queries)
         self.num_iters = 0
         self.cur_state = np.ones((self.feature_length, 1, 1)) * -1
         self.action_space.rem_actions = range(self.action_space.n)
@@ -74,4 +74,5 @@ class EnvTest(object):
 
 if __name__ == '__main__':
     for i in range(20):
-        print(sample_generate(5, 2))
+        sample = sample_generate(feature_length=5, first_n=2)
+        print(sample)

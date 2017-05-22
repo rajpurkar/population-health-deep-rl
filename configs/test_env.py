@@ -2,19 +2,23 @@ import time
 
 class config():
     # env config
-    state_shape = (5, 1, 1)
-    max_steps = 4
-    num_classes= max_steps + 1
-
+    state_shape         = (10, 1, 1)
+    max_steps           = 5
+    
+    # sampling
+    neccessary_queries  = 3
+    num_classes         = neccessary_queries + 1
+    
     #exploration
-    no_repeats = True
-    no_sample_repeats = False
+    no_repeats          = False
+    no_sample_repeats   = False
 
     # reward config
     correctAnswerReward = 10.
-    wrongAnswerReward = -1.
-    queryReward = -2.
+    wrongAnswerReward   = -1.
+    queryReward         = -2.
 
+    # training
     render_train     = False
     render_test      = False
     overwrite_render = True
@@ -31,23 +35,23 @@ class config():
     num_episodes_test = 50
     grad_clip         = True
     clip_val          = 10
-    saving_freq       = 250000
+    saving_freq       = 50000
     log_freq          = 50
-    eval_freq         = 25000
+    eval_freq         = 5000
     soft_epsilon      = 0.
 
     # nature paper hyper params
-    nsteps_train       = 500000
+    nsteps_train       = 1000000
     batch_size         = 32
     buffer_size        = 100000
     target_update_freq = 1000
-    gamma              = 1.0
+    gamma              = 0.999
     learning_freq      = 1
     state_history      = 1
     lr_begin           = 0.00025
     lr_end             = 0.00005
-    lr_nsteps          = nsteps_train
+    lr_nsteps          = nsteps_train/2
     eps_begin          = 1
     eps_end            = 0.001
-    eps_nsteps         = nsteps_train
+    eps_nsteps         = nsteps_train/2
     learning_start     = 500
