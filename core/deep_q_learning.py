@@ -183,7 +183,8 @@ class DQN(QN):
                 best_action = best_actions[idx]
             return best_action, action_values
         else:
-            return np.argmax(action_values), action_values
+            best = np.random.choice(np.flatnonzero(action_values == np.max(action_values)))
+            return best, action_values
 
 
     def update_step(self, t, replay_buffer, lr):
