@@ -12,6 +12,7 @@ class config():
     #exploration
     no_repeats          = False
     no_sample_repeats   = False
+    random_tie_break    = True
 
     # reward config
     correctAnswerReward = 10.

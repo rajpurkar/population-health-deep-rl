@@ -183,7 +183,10 @@ class DQN(QN):
                 best_action = best_actions[idx]
             return best_action, action_values
         else:
-            best = np.random.choice(np.flatnonzero(action_values == np.max(action_values)))
+            if self.config.random_tie_break is True:
+                best = np.random.choice(np.flatnonzero(action_values == np.max(action_values)))
+            else:
+                best = np.argmax(action_values)
             return best, action_values
 
 

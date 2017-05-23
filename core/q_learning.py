@@ -323,6 +323,9 @@ class QN(object):
             exp_schedule: exploration strategy for epsilon
             lr_schedule: schedule for learning rate
         """
+        # config check
+        assert(self.config.no_repeats != self.config.random_tie_break), "random_tie_break and no repeats cannot be True at the same time; change config"
+
         # initialize
         self.initialize()
 
