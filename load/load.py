@@ -6,7 +6,12 @@ import os
 
 
 def load_large_dta(fname):
-    reader = pd.read_stata(fname, iterator=True, convert_categoricals=False, convert_missing=True)
+    reader = pd.read_stata(
+        fname,
+        iterator=True,
+        convert_dates=False,
+        convert_categoricals=False,
+        convert_missing=False)
     df = pd.DataFrame()
 
     try:

@@ -37,10 +37,13 @@ def process(file, header_file):
     for field in field_to_value_for_record:
         try:
             name = fields_to_names[field]
-            names_to_value[name] = field_to_value_for_record[field]
+            value = field_to_value_for_record[field].strip()
+            names_to_value[name] = value
+            print("{: >10} {: <60.60} {:<3}".format(field, name, value))
+            #print(field, name, value)
         except:
             continue
-    pp.pprint(names_to_value)
+    #pp.pprint(names_to_value)
 
 
 def get_field_names(filename):
