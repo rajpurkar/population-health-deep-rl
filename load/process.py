@@ -6,6 +6,7 @@ import os
 import random
 import pprint
 import shlex
+import collections
 pp = pprint.PrettyPrinter(depth=6)
 
 
@@ -30,9 +31,35 @@ def get_single_record(data_file):
     return field_to_value_for_record
 
 
+def process_headers(filename):
+    fields_to_names = {}
+    fields_to_parent_fields = {}
+    field_to_values_to_interprets = collections.defaultdict(dict)
+    with open(filename, 'r') as f:
+        lines = iter(f.readlines())
+        while True:
+            line = next(lines, None)
+            if line is None:
+                break
+            line = shlex.split(line)
+            if len(line) > 3 and line[1] == 'variable':
+                fields_to_names[line[2]] = line[3]
+            elif len(line) > 3 and line[1] == 'values':
+                fields_to_parent_fields[line[2]] = line[3]
+            elif len(line) > 2 and line[1] == 'define':
+                field = line[2]
+                while True:
+                    line = next(lines, None)
+                    if line is None or line == ';\r\n':
+                        break
+                    line = shlex.split(line)
+                    field_to_values_to_interprets[field][line[0]] = line[1]
+    return fields_to_names, fields_to_parent_fields, field_to_values_to_interprets
+
+
 def process(file, header_file):
+    fields_to_names, fields_to_parent_fields, field_to_values_to_interprets = process_headers(header_file)
     field_to_value_for_record = get_single_record(file)
-    fields_to_names, fields_to_parent_fields = process_headers(header_file)
     names_to_value = {}
     parent_field_used = {}
     for field in field_to_value_for_record:
@@ -43,27 +70,18 @@ def process(file, header_file):
             else:
                 parent_field = field
             value = field_to_value_for_record[field].strip()
+            if parent_field in field_to_values_to_interprets:
+                assert(value in field_to_values_to_interprets[parent_field])
+                interpret_value = field_to_values_to_interprets[parent_field][value]
+            else:
+                interpret_value = value
             assert(parent_field not in parent_field_used)
             assert(name not in names_to_value)
             names_to_value[name] = value
             parent_field_used[parent_field] = True
-            print("{: >10} {: <60.60} {:<3}".format(parent_field, name, value))
+            print("{: >10} {: <60.60} {:<3}".format(parent_field, name, interpret_value))
         except:
             continue
-
-
-def process_headers(filename):
-    fields_to_names = {}
-    fields_to_parent_fields = {}
-    with open(filename, 'r') as f:
-        lines = f.readlines()
-        for line in lines:
-            line = shlex.split(line)
-            if len(line) > 3 and line[1] == 'variable':
-                fields_to_names[line[2]] = line[3]
-            elif len(line) > 3 and line[1] == 'values':
-                fields_to_parent_fields[line[2]] = line[3]
-    return fields_to_names, fields_to_parent_fields
 
 
 if __name__ == '__main__':
