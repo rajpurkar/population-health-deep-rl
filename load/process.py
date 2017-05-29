@@ -32,29 +32,38 @@ def get_single_record(data_file):
 
 def process(file, header_file):
     field_to_value_for_record = get_single_record(file)
-    fields_to_names = get_field_names(header_file)
+    fields_to_names, fields_to_parent_fields = process_headers(header_file)
     names_to_value = {}
+    parent_field_used = {}
     for field in field_to_value_for_record:
         try:
             name = fields_to_names[field]
+            if field in fields_to_parent_fields:
+                parent_field = fields_to_parent_fields[field]
+            else:
+                parent_field = field
             value = field_to_value_for_record[field].strip()
+            assert(parent_field not in parent_field_used)
+            assert(name not in names_to_value)
             names_to_value[name] = value
-            print("{: >10} {: <60.60} {:<3}".format(field, name, value))
-            #print(field, name, value)
+            parent_field_used[parent_field] = True
+            print("{: >10} {: <60.60} {:<3}".format(parent_field, name, value))
         except:
             continue
-    #pp.pprint(names_to_value)
 
 
-def get_field_names(filename):
+def process_headers(filename):
     fields_to_names = {}
+    fields_to_parent_fields = {}
     with open(filename, 'r') as f:
         lines = f.readlines()
         for line in lines:
             line = shlex.split(line)
-            if len(line) > 1 and line[1] == 'variable':
+            if len(line) > 3 and line[1] == 'variable':
                 fields_to_names[line[2]] = line[3]
-    return fields_to_names
+            elif len(line) > 3 and line[1] == 'values':
+                fields_to_parent_fields[line[2]] = line[3]
+    return fields_to_names, fields_to_parent_fields
 
 
 if __name__ == '__main__':
