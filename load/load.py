@@ -11,14 +11,13 @@ def load_large_dta(fname):
         iterator=True,
         convert_dates=False,
         convert_categoricals=False,
-        convert_missing=False)
+        convert_missing=False,
+        chunksize=100000)
     df = pd.DataFrame()
 
     try:
-        chunk = reader.get_chunk(100*1000)
-        while len(chunk) > 0:
+        for chunk in reader:
             df = df.append(chunk, ignore_index=True)
-            chunk = reader.get_chunk(100*1000)
             print('.'),
             sys.stdout.flush()
     except (StopIteration, KeyboardInterrupt):
