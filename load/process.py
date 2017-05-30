@@ -7,6 +7,7 @@ import random
 import pprint
 import shlex
 import collections
+import glob
 pp = pprint.PrettyPrinter(depth=6)
 
 
@@ -104,8 +105,12 @@ def process(csv_file, do_file, dct_file):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process data.')
-    parser.add_argument('csv_file', help='CSV file to load')
-    parser.add_argument('do_file', help='DO file to load')
-    parser.add_argument('dct_file', help='DCT file to load')
+    parser.add_argument('data_folder', help='data folder to load')
     args = parser.parse_args()
-    process(args.csv_file, args.do_file, args.dct_file)
+    try:
+        csv_file = glob.glob(args.data_folder + '*.csv')[0]
+        do_file = glob.glob(args.data_folder + '*.DO')[0]
+        dct_file = glob.glob(args.data_folder + '*.DCT')[0]
+        process(csv_file, do_file, dct_file)
+    except:
+        print("Make sure folder has a CSV, DO, and DCT file")
