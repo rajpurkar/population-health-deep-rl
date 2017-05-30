@@ -26,6 +26,7 @@ def get_single_record(data_file):
         random_line = get_random_line(f).split(',')
 
     for field, value in zip(first_line, random_line):
+        value = value.strip()
         if value != '':
             field_to_value_for_record[field] = value
     return field_to_value_for_record
@@ -54,39 +55,52 @@ def process_headers(filename):
                         break
                     line = shlex.split(line)
                     field_to_values_to_interprets[field][line[0]] = line[1]
-    return fields_to_names, fields_to_parent_fields, field_to_values_to_interprets
+    return (fields_to_names, fields_to_parent_fields, field_to_values_to_interprets)
 
 
-def process(file, header_file):
-    fields_to_names, fields_to_parent_fields, field_to_values_to_interprets = process_headers(header_file)
-    field_to_value_for_record = get_single_record(file)
-    names_to_value = {}
-    parent_field_used = {}
+def process_types(dct_file):
+    fields_to_types = {}
+    with open(dct_file, 'r') as f:
+        for line in f.readlines():
+            line = shlex.split(line)
+            if len(line) >= 3:
+                fields_to_types[line[1]] = line[0]
+    return fields_to_types
+
+
+def process(csv_file, do_file, dct_file):
+    fields_to_types = process_types(dct_file)
+    (fields_to_names,
+    fields_to_parent_fields,
+    field_to_values_to_interprets) = process_headers(do_file)
+    field_to_value_for_record = get_single_record(csv_file)
     for field in field_to_value_for_record:
+        if field == '': continue
+        field = field.strip()
+        name = fields_to_names[field]
+        assert(field in fields_to_types)
+        field_type = fields_to_types[field]
+        if field in fields_to_parent_fields:
+            parent_field = fields_to_parent_fields[field]
+        else:
+            parent_field = field
+        value = field_to_value_for_record[field].strip()
         try:
-            name = fields_to_names[field]
-            if field in fields_to_parent_fields:
-                parent_field = fields_to_parent_fields[field]
-            else:
-                parent_field = field
-            value = field_to_value_for_record[field].strip()
             if parent_field in field_to_values_to_interprets:
+                value = str(int(float(value)))
                 assert(value in field_to_values_to_interprets[parent_field])
                 interpret_value = field_to_values_to_interprets[parent_field][value]
             else:
                 interpret_value = value
-            assert(parent_field not in parent_field_used)
-            assert(name not in names_to_value)
-            names_to_value[name] = value
-            parent_field_used[parent_field] = True
-            print("{: >10} {: <60.60} {:<3}".format(parent_field, name, interpret_value))
         except:
-            continue
+            interpret_value = "ERR interpret:" + value 
+        print("{: >10.10} {: >4.4} {: <50.50} {:<3}".format(parent_field, field_type, name, interpret_value))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process data.')
-    parser.add_argument('file', help='CSV file to load')
-    parser.add_argument('header_file', help='header file to load')
+    parser.add_argument('csv_file', help='CSV file to load')
+    parser.add_argument('do_file', help='DO file to load')
+    parser.add_argument('dct_file', help='DCT file to load')
     args = parser.parse_args()
-    process(args.file, args.header_file)
+    process(args.csv_file, args.do_file, args.dct_file)
