@@ -29,16 +29,12 @@ def load_large_dta(fname):
 
 def convert_to_csv(dta, filename):
     print("saving to csv...")
-    dta.to_csv(filename + '.csv')
+    dta.to_csv(filename + '.CSV')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Load data.')
-    parser.add_argument('file',
-                        help='File to load')
-    parser.add_argument('--output_dir',
-                        help='Output dir', default=".")
+    parser.add_argument('file', help='File to load')
     args = parser.parse_args()
     dta = load_large_dta(args.file)
-    fname = os.path.basename(args.file)
-    convert_to_csv(dta, args.output_dir + '/' + fname)
+    convert_to_csv(dta, args.file)
