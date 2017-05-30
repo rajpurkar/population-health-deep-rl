@@ -76,26 +76,30 @@ def process(csv_file, do_file, dct_file):
     field_to_values_to_interprets) = process_headers(do_file)
     field_to_value_for_record = get_single_record(csv_file)
     for field in field_to_value_for_record:
-        if field == '': continue
-        field = field.strip()
-        name = fields_to_names[field]
-        assert(field in fields_to_types)
-        field_type = fields_to_types[field]
-        if field in fields_to_parent_fields:
-            parent_field = fields_to_parent_fields[field]
-        else:
-            parent_field = field
-        value = field_to_value_for_record[field].strip()
         try:
-            if parent_field in field_to_values_to_interprets:
-                value = str(int(float(value)))
-                assert(value in field_to_values_to_interprets[parent_field])
-                interpret_value = field_to_values_to_interprets[parent_field][value]
+            if field == '': continue
+            field = field.strip()
+            assert(field in fields_to_names)
+            name = fields_to_names[field]
+            assert(field in fields_to_types)
+            field_type = fields_to_types[field]
+            if field in fields_to_parent_fields:
+                parent_field = fields_to_parent_fields[field]
             else:
-                interpret_value = value
+                parent_field = field
+            value = field_to_value_for_record[field].strip()
+            try:
+                if parent_field in field_to_values_to_interprets:
+                    value = str(int(float(value)))
+                    assert(value in field_to_values_to_interprets[parent_field])
+                    interpret_value = field_to_values_to_interprets[parent_field][value]
+                else:
+                    interpret_value = value
+            except:
+                interpret_value = "ERR interpret:" + value 
+            print("{: >10.10} {: >4.4} {: <50.50} {:<3}".format(parent_field, field_type, name, interpret_value))
         except:
-            interpret_value = "ERR interpret:" + value 
-        print("{: >10.10} {: >4.4} {: <50.50} {:<3}".format(parent_field, field_type, name, interpret_value))
+            print("Error parsing:", field)
 
 
 if __name__ == '__main__':
