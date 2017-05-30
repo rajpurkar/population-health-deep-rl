@@ -27,6 +27,7 @@ def get_single_record(data_file):
 
     for field, value in zip(first_line, random_line):
         value = value.strip()
+        field = field.strip()
         if value != '':
             field_to_value_for_record[field] = value
     return field_to_value_for_record
