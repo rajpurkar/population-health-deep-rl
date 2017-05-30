@@ -57,7 +57,10 @@ def process_headers(filename):
                         break
                     line = shlex.split(line)
                     field_to_values_to_interprets[field][line[0]] = line[1]
-    return (fields_to_names, fields_to_parent_fields, field_to_values_to_interprets)
+    return (
+        fields_to_names,
+        fields_to_parent_fields,
+        field_to_values_to_interprets)
 
 
 def process_types(dct_file):
@@ -69,48 +72,54 @@ def process_types(dct_file):
                 fields_to_types[line[1]] = line[0]
     return fields_to_types
 
+def get_parent_field(field, fields_to_parent_fields):
+    if field in fields_to_parent_fields:
+        parent_field = fields_to_parent_fields[field]
+    else:
+        parent_field = field
+    return parent_field
 
-def process(csv_file, do_file, dct_file):
+
+def get_interpret_value(field, value, field_value_label):
+    interpret_value = value
+    if field in field_value_label:
+        value = str(int(float(value)))
+        if (value in field_value_label[field]):
+            interpret_value = field_value_label[field][value]
+    return interpret_value
+
+
+def process(csv_file, do_file, dct_file, only_interpretable=False):
     fields_to_types = process_types(dct_file)
     (fields_to_names,
     fields_to_parent_fields,
-    field_to_values_to_interprets) = process_headers(do_file)
-    field_to_value_for_record = get_single_record(csv_file)
+    field_to_values_to_label) = process_headers(do_file)
+    field_to_value_for_record = get_single_record(csv_file) 
     for field in field_to_value_for_record:
-        try:
-            if field == '': continue
-            field = field.strip()
-            assert(field in fields_to_names)
-            name = fields_to_names[field]
-            assert(field in fields_to_types)
-            field_type = fields_to_types[field]
-            if field in fields_to_parent_fields:
-                parent_field = fields_to_parent_fields[field]
-            else:
-                parent_field = field
-            value = field_to_value_for_record[field].strip()
-            try:
-                if parent_field in field_to_values_to_interprets:
-                    value = str(int(float(value)))
-                    assert(value in field_to_values_to_interprets[parent_field])
-                    interpret_value = field_to_values_to_interprets[parent_field][value]
-                else:
-                    interpret_value = value
-            except:
-                interpret_value = "ERR interpret:" + value 
-            print("{: >10.10} {: >4.4} {: <50.50} {:<3}".format(parent_field, field_type, name, interpret_value))
-        except:
-            print("Error parsing:", field)
+        if field == '': continue
+        value = field_to_value_for_record[field]
+        name = fields_to_names[field]
+        field_type = fields_to_types[field]
+        parent_field = \
+            get_parent_field(field, fields_to_parent_fields)
+        interpret_value = \
+            get_interpret_value(parent_field, value, field_to_values_to_label)
+        if only_interpretable is True:
+            if interpret_value == value:
+                continue
+        print("{: >10.10} {: <5.5} {: >50.50} {:<15.15}"
+            .format(field, field_type, name, interpret_value))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process data.')
     parser.add_argument('data_folder', help='data folder to load')
+    parser.add_argument('--interpretable', action='store_true')
     args = parser.parse_args()
     try:
-        csv_file = glob.glob(args.data_folder + '*.csv')[0]
-        do_file = glob.glob(args.data_folder + '*.DO')[0]
-        dct_file = glob.glob(args.data_folder + '*.DCT')[0]
-        process(csv_file, do_file, dct_file)
+        csv_file = glob.glob(args.data_folder + '/*.CSV')[0]
+        do_file = glob.glob(args.data_folder + '/*.DO')[0]
+        dct_file = glob.glob(args.data_folder + '/*.DCT')[0]
     except:
         print("Make sure folder has a CSV, DO, and DCT file")
+    process(csv_file, do_file, dct_file, only_interpretable=args.interpretable)
