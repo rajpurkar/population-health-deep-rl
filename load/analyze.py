@@ -16,22 +16,22 @@ import numpy as np
 
 
 def analyze(file):
+    p_threshold = 1e-4
+    min_samples = 5
     df = pd.read_csv(file, low_memory=False)
     chosen = 'Final result of malaria from blood smear test'
     df = df.loc[df[chosen].isin(['Positive', 'Negative'])]
-    min_samples = 5
     tups = []
     for col in df:
         if col == chosen: continue
         confusion_matrix = pd.crosstab(df[chosen], df[col])
         if (confusion_matrix > min_samples).all().all() is False: continue
-        c, p, dof, elems = ss.chi2_contingency(confusion_matrix)
-        if p >= 1e-4: continue
-        tups.append((col, c, p, dof))
-    tups = sorted(tups, key=lambda t: (t[3], -t[1]))
-    for tup in tups:
-        print("{: >50.50} {: >5.5} {:<5.5} {:5}".format(*tup))
-
+        c, p, dof, elems = ss.chi2_contingency(confusion_matrix, correction=False)
+        if p >= p_threshold: continue
+        tups.append((col, p))
+    tups = sorted(tups, key=lambda t: (t[1]))
+    for tup in tups[:25]:
+        print("{: >70.70} {: >5.5}".format(*tup))
 
 
 if __name__ == '__main__':
