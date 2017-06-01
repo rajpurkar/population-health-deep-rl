@@ -35,7 +35,7 @@ def analyze(file):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Post process data.')
-    parser.add_argument('file', help='File to postprocess')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('file', help='File to analyze')
     args = parser.parse_args()
     analyze(args.file)
