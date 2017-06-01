@@ -21,17 +21,20 @@ def analyze(file):
     df = pd.read_csv(file, low_memory=False)
     chosen = 'Final result of malaria from blood smear test'
     df = df.loc[df[chosen].isin(['Positive', 'Negative'])]
+    ignore_phrase_columns = [chosen, 'Presence of species:', 'rapid test']
     tups = []
     for col in df:
-        if col == chosen: continue
-        confusion_matrix = pd.crosstab(df[chosen], df[col])
+        if any(phrase in col for phrase in ignore_phrase_columns):
+            continue
+        confusion_matrix = pd.crosstab(df[col], df[chosen])
         if (confusion_matrix > min_samples).all().all() is False: continue
         c, p, dof, elems = ss.chi2_contingency(confusion_matrix, correction=False)
         if p >= p_threshold: continue
-        tups.append((col, p))
+        tups.append((col, p, confusion_matrix))
     tups = sorted(tups, key=lambda t: (t[1]))
-    for tup in tups[:25]:
-        print("{: >70.70} {: >5.5}".format(*tup))
+    for (col, p, cm) in tups[:25]:
+        print("{: >70.70} {: >5.5}".format(col, p))
+        print(cm)
 
 
 if __name__ == '__main__':
