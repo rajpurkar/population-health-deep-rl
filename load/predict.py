@@ -1,62 +1,55 @@
+from __future__ import print_function
 import pandas as pd
 import numpy as np
 import argparse
 from sklearn import preprocessing
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report, f1_score
-from sklearn.model_selection import cross_val_score
+import sklearn.metrics
+from sklearn.model_selection import cross_val_predict
+import sklearn.linear_model
+import sklearn.neural_network
+import itertools
+import pprint
+from tqdm import tqdm
+pp = pprint.PrettyPrinter(depth=6)
+
+def findsubsets(S,m):
+    return set(itertools.combinations(S, m))
+
+def get_X_cols(df, names):
+    X = df[names]
+    X = pd.get_dummies(X)
+    feature_names = list(X.columns)
+    X = X.values
+    return X, feature_names
+
+
+def get_Y_col(df, col_name):
+    y = df[col_name]
+    le = preprocessing.LabelEncoder()
+    y = le.fit_transform(y)
+    return y
 
 def predict(file, model='endemicity_predict'):
     df = pd.read_csv(file, low_memory=False)
-    train, test = train_test_split(df, test_size = 0.2)
-    y_column = 'Final result of malaria from blood smear test'
-    avoid_columns = [
-        y_column,
-        'Presence of species: falciparum (Pf)',
-        'Result of malaria rapid test'
-        ]
-    x_columns = [col for col in train if col not in avoid_columns]
-    name_to_col_index = {}
-    for (i, col) in enumerate(x_columns):
-        name_to_col_index[col] = i
-    x_train = train[x_columns].values
-    y_train = train[y_column].values
-    x_test = test[x_columns].values
-    y_test = test[y_column].values
+    y_column_name = 'Final result of malaria from blood smear test'
+    columns = list(df.columns)
+    for num_features in range(len(columns), len(columns) + 1):
+        print(num_features, "features")
+        for cols in tqdm(findsubsets(columns, num_features)):
+            cols = list(cols)
+            ignore_phrase_columns = [y_column_name.lower(), 'presence of species:', 'rapid test', 'number']
+            cols = filter(lambda col: not any(phrase.lower() in col.lower() for phrase in ignore_phrase_columns), cols)
+            X, feature_names = get_X_cols(df, cols)
+            y = get_Y_col(df, y_column_name)
+            clf = sklearn.neural_network.MLPClassifier()
+            #clf = sklearn.linear_model.LogisticRegressionCV()
+            #clf = sklearn.linear_model.Lasso()
+            predictions = cross_val_predict(clf, X, y, n_jobs=-1, verbose=1)
+            score = sklearn.metrics.precision_recall_fscore_support(y, predictions, average='binary')
+            #score = sklearn.metrics.f1_score(y, predictions, average='binary')
+            pp.pprint(cols)
+            pp.pprint(score)
 
-    le = preprocessing.LabelEncoder()
-    y_train = le.fit_transform(y_train)
-    y_test = le.fit_transform(y_test)
-
-    x = x_test
-    y = y_test
-
-    if model == 'all_no':
-        y_predict = [0] * len(x)
-    elif model == 'endemicity_predict':
-        from sklearn import tree
-
-        x_endem = x_train[:, name_to_col_index['Malaria endemicity']]
-        x_train = pd.get_dummies(x_endem).values
-
-        x = x[:, name_to_col_index['Malaria endemicity']]
-        x = pd.get_dummies(x).values
-
-        clf = tree.DecisionTreeClassifier()
-        clf.fit(x_train, y_train)
-
-        y_predict = clf.predict(x)
-    elif model == 'decision_tree':
-        ## todo: complete
-        from sklearn import tree
-        clf = tree.DecisionTreeClassifier()
-        clf.fit(x_train, y_train)
-        y_predict = clf.predict(x)
-    print(classification_report(
-        y, y_predict))
-    print(accuracy_score(y, y_predict))
-    print(f1_score(
-        y, y_predict, average='binary'))
 
 
 if __name__ == '__main__':
