@@ -7,7 +7,8 @@ import sklearn.metrics
 from sklearn.model_selection import cross_val_predict
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 import sklearn.linear_model
-import sklearn.neural_network
+import warnings
+warnings.filterwarnings('ignore', 'numpy equal will not check object identity in the future')
 import itertools
 import pprint
 from tqdm import tqdm
@@ -41,31 +42,29 @@ def get_Y_col(df, col_name):
     y = le.fit_transform(y)
     return y
 
-def predict(file, model='endemicity_predict'):
+def get_X_Y_from_data(file):
     df = pd.read_csv(file, low_memory=False)
     y_column_name = 'Final result of malaria from blood smear test'
-    columns = list(df.columns)
-    for num_features in range(len(columns) + 1, 0, -1):
-        print(num_features, "features")
-        for cols in tqdm(findsubsets(columns, num_features)):
-            cols = list(cols)
-            ignore_phrase_columns = [y_column_name.lower(), 'presence of species:', 'rapid test', 'number']
-            cols = filter(lambda col: not any(phrase.lower() in col.lower() for phrase in ignore_phrase_columns), cols)
-            X, feature_names = get_X_cols(df, cols)
-            y = get_Y_col(df, y_column_name)
-            clf = sklearn.linear_model.LogisticRegression()
-            # clf = sklearn.neural_network.MLPClassifier()
-            # clf = sklearn.linear_model.Lasso()
-            predictions = cross_val_predict(clf, X, y, n_jobs=-1, verbose=1)
-            score = sklearn.metrics.precision_recall_fscore_support(y, predictions, average='binary')
-            pp.pprint(cols)
-            pp.pprint(score)
+    cols = list(df.columns)
+    ignore_phrase_columns = [y_column_name.lower(), 'presence of species:', 'rapid test', 'number']
+    cols = filter(lambda col: not any(phrase.lower() in col.lower() for phrase in ignore_phrase_columns), cols)
+    X, feature_names = get_X_cols(df, cols)
+    y = get_Y_col(df, y_column_name)
+    return X, y
 
+
+def predict_from_data(file):
+    X, y = get_X_Y_from_data(file)
+    clf = sklearn.linear_model.LogisticRegression()
+    predictions = cross_val_predict(clf, X, y, n_jobs=-1, verbose=1)
+    score = sklearn.metrics.precision_recall_fscore_support(y, predictions, average='binary')
+    pp.pprint(cols)
+    pp.pprint(score)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('file', help='File to predict')
     args = parser.parse_args()
-    predict(args.file)
+    predict_from_data(args.file)
 
