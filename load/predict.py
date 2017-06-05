@@ -5,6 +5,7 @@ import argparse
 from sklearn import preprocessing
 import sklearn.metrics
 from sklearn.model_selection import cross_val_predict
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 import sklearn.linear_model
 import sklearn.neural_network
 import itertools
@@ -12,14 +13,25 @@ import pprint
 from tqdm import tqdm
 pp = pprint.PrettyPrinter(depth=6)
 
+
 def findsubsets(S,m):
     return set(itertools.combinations(S, m))
 
+
 def get_X_cols(df, names):
     X = df[names]
-    X = pd.get_dummies(X)
+    cols = X.columns
     feature_names = list(X.columns)
-    X = X.values
+    for col in X:
+        label_enc = LabelEncoder()
+        X[col] = label_enc.fit_transform(X[col])
+
+    enc = OneHotEncoder(n_values=20, sparse=False)
+    X = enc.fit_transform(X)
+
+    X = X.reshape((X.shape[0], len(cols), 1, -1))
+    print(X.shape)
+
     return X, feature_names
 
 
@@ -41,8 +53,8 @@ def predict(file, model='endemicity_predict'):
             cols = filter(lambda col: not any(phrase.lower() in col.lower() for phrase in ignore_phrase_columns), cols)
             X, feature_names = get_X_cols(df, cols)
             y = get_Y_col(df, y_column_name)
-            clf = sklearn.neural_network.MLPClassifier()
-            #clf = sklearn.linear_model.LogisticRegressionCV()
+            # clf = sklearn.neural_network.MLPClassifier()
+            clf = sklearn.linear_model.LogisticRegression()
             #clf = sklearn.linear_model.Lasso()
             predictions = cross_val_predict(clf, X, y, n_jobs=-1, verbose=1)
             score = sklearn.metrics.precision_recall_fscore_support(y, predictions, average='binary')
