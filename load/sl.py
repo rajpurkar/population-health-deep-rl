@@ -6,7 +6,7 @@ from predict import *
 
 # Parameters
 learning_rate = 0.001
-training_epochs = 1
+training_epochs = 15
 batch_size = 100
 display_step = 1
 total_batch = 10
@@ -38,6 +38,9 @@ def get_dataset(file = "../../mis-data/kepr7hdt/KEPR7HFL.DTA.CSV-processed.csv-p
     xdims = input_X.shape
     return input_X, input_y
 
+def get_3d_data(file = "../../mis-data/kepr7hdt/KEPR7HFL.DTA.CSV-processed.csv-postprocessed.csv"):
+    return get_X_Y_from_data(file)
+
 def get_next_batch(input_X, input_y, i, batch_size):
     batch_X = input_X[i*batch_size: i*batch_size+ batch_size]
     batch_y = input_y[i*batch_size: i*batch_size+ batch_size]
@@ -59,8 +62,8 @@ def network(x, weights, biases):
 # Create model
 def cnn_network(x):
     out = x
-    out = layers.convolution2d(out, num_outputs=32, kernel_size=[8,8], activation_fn=tf.nn.relu, stride=4)
-    out = layers.convolution2d(out, num_outputs=64, kernel_size=[4,4], activation_fn=tf.nn.relu, stride=2)
+    out = layers.convolution2d(out, num_outputs=10, kernel_size=[1,1], activation_fn=tf.nn.relu, stride=4)
+    out = layers.convolution2d(out, num_outputs=64, kernel_size=[2,2], activation_fn=tf.nn.relu, stride=2)
     out = layers.convolution2d(out, num_outputs=64, kernel_size=[3,3], activation_fn=tf.nn.relu, stride=1)
     out = layers.flatten(out)
     out = layers.fully_connected(out, 512, activation_fn=tf.nn.relu)
@@ -85,8 +88,10 @@ biases = {
     'out': tf.Variable(tf.random_normal([n_classes]))
 }
 
-input_X, input_y = get_fake_dataset(batch_size*total_batch, 103, 1, 400)
+#input_X, input_y = get_fake_dataset(batch_size*total_batch, 103, 1, 400)
 
+input_X, input_y = get_3d_data()
+print (input_X.shape)
 width = input_X.shape[1]
 height = input_X.shape[2]
 depth = input_X.shape[3]
@@ -126,9 +131,7 @@ with tf.Session() as sess:
 
     # Test model
     predictions = tf.argmax(pred, 1)
-    correct_prediction = tf.equal(predictions, y)
-    # Calculate accuracy
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
     evalx, evaly = get_next_batch(input_X, input_y, total_batch - 1, batch_size)
-    print("Accuracy:", accuracy.eval({x: evalx, y: evaly}))
-    array_pred = predictions.eval({x: evalx, y: evaly})
+    output = predictions.eval({x: evalx, y: evaly})
+    score = sklearn.metrics.precision_recall_fscore_support(evaly, output, average='binary')
+    print(score)
