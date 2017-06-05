@@ -5,17 +5,16 @@ import tensorflow.contrib.layers as layers
 from predict import *
 
 # Parameters
-learning_rate = 0.001
-training_epochs = 15
-batch_size = 100
+learning_rate = 0.0001
+training_epochs = 50
+batch_size = 32
 display_step = 1
-total_batch = 10
 
 # Network Parameters
 n_hidden_1 = 256 # 1st layer number of features
 n_hidden_2 = 256 # 2nd layer number of features
 n_input = 295
-n_classes = 2
+n_classes = 1
 
 def get_fake_dataset(batch_size, width, height, depth):
  	batch_x = np.random.rand(batch_size, width, height, depth)
@@ -23,7 +22,7 @@ def get_fake_dataset(batch_size, width, height, depth):
  	batch_y = np.array(batch_y)
  	return batch_x, batch_y
 
-def get_dataset(file = "../../mis-data/kepr7hdt/KEPR7HFL.DTA.CSV-processed.csv-postprocessed.csv"):
+def get_dataset(file = "data/KE_2015_MIS_05232017_1847_107786/kepr7hdt/KEPR7HFL.DTA.CSV-processed.csv-postprocessed.csv"):
     df = pd.read_csv(file, low_memory=False)
     y_column_name = 'Final result of malaria from blood smear test'
     columns = list(df.columns)
@@ -38,13 +37,14 @@ def get_dataset(file = "../../mis-data/kepr7hdt/KEPR7HFL.DTA.CSV-processed.csv-p
     xdims = input_X.shape
     return input_X, input_y
 
-def get_3d_data(file = "../../mis-data/kepr7hdt/KEPR7HFL.DTA.CSV-processed.csv-postprocessed.csv"):
+def get_3d_data(file = "data/KE_2015_MIS_05232017_1847_107786/kepr7hdt/KEPR7HFL.DTA.CSV-processed.csv-postprocessed.csv"):
     return get_X_Y_from_data(file)
 
-def get_next_batch(input_X, input_y, i, batch_size):
+def get_next_batch(input_X, input_y, input_weights, i, batch_size):
     batch_X = input_X[i*batch_size: i*batch_size+ batch_size]
     batch_y = input_y[i*batch_size: i*batch_size+ batch_size]
-    return batch_X, batch_y
+    batch_weights = input_weights[i*batch_size: i*batch_size + batch_size]
+    return batch_X, batch_y, return batch_weights
 
 # Create model
 def network(x, weights, biases):
@@ -59,22 +59,37 @@ def network(x, weights, biases):
     out_layer = tf.matmul(layer_2, weights['out']) + biases['out']
     return out_layer
 
+
 # Create model
 def cnn_network(x):
     out = x
-    out = layers.convolution2d(out, num_outputs=10, kernel_size=[1,1], activation_fn=tf.nn.relu, stride=4)
-    out = layers.convolution2d(out, num_outputs=64, kernel_size=[2,2], activation_fn=tf.nn.relu, stride=2)
-    out = layers.convolution2d(out, num_outputs=64, kernel_size=[3,3], activation_fn=tf.nn.relu, stride=1)
+    out = layers.convolution2d(out, num_outputs=10, kernel_size=[1, 1], activation_fn=tf.nn.relu, stride=1)
     out = layers.flatten(out)
-    out = layers.fully_connected(out, 512, activation_fn=tf.nn.relu)
+    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
+    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
+    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
+    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
+    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
+    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
+    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
+    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
+    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
+    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
+    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
+    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
+    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
+    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
+    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
     out = layers.fully_connected(out, n_classes, activation_fn=None)
+    out = tf.reshape(out, shape=(-1,))
     return out
 
 # tf Graph input
 def add_placeholder(width, height, depth):
     x = tf.placeholder("float", [None, width, height, depth])
-    y = tf.placeholder("int64", [None, ])
-    return x, y
+    y = tf.placeholder("float32", [None, ])
+    loss_weights = tf.placeholder("float32", [None, ])
+    return x, y, loss_weights
 
 # Store layers weight & bias
 weights = {
@@ -96,19 +111,21 @@ width = input_X.shape[1]
 height = input_X.shape[2]
 depth = input_X.shape[3]
 
+input_weights = [k + 1 for k in input_y]
 #get placeholders:
-x, y = add_placeholder(width, height, depth)
+x, y, loss_weights = add_placeholder(width, height, depth)
 
 # Construct model
 pred = cnn_network(x)
 
 # Define loss and optimizer
-cost = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=pred, labels=y))
+cost = tf.reduce_mean(tf.losses.sigmoid_cross_entropy(logits=pred, multi_class_labels=y, weights=loss_weights))
 optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
 
 # Initializing the variables
 init = tf.global_variables_initializer()
 
+total_batch = input_X.shape[0] / batch_size
 # Launch the graph
 with tf.Session() as sess:
     sess.run(init)
@@ -127,11 +144,20 @@ with tf.Session() as sess:
         if epoch % display_step == 0:
             print("Epoch:", '%04d' % (epoch+1), "cost=", \
                 "{:.9f}".format(avg_cost))
+
+        # Test model
+        predictions = tf.nn.sigmoid(pred)
+        evalx, evaly = get_next_batch(input_X, input_y, total_batch - 1, batch_size)
+        output = predictions.eval({x: evalx, y: evaly})
+        output[output > 0.5] = 1
+        output[output <= 0.5] = 0
+        score = sklearn.metrics.precision_recall_fscore_support(evaly, output, average='binary')
+        print(score)
     print("Optimization Finished!")
 
-    # Test model
-    predictions = tf.argmax(pred, 1)
-    evalx, evaly = get_next_batch(input_X, input_y, total_batch - 1, batch_size)
-    output = predictions.eval({x: evalx, y: evaly})
-    score = sklearn.metrics.precision_recall_fscore_support(evaly, output, average='binary')
-    print(score)
+    # # Test model
+    # predictions = tf.argmax(pred, 1)
+    # evalx, evaly = get_next_batch(input_X, input_y, total_batch - 1, batch_size)
+    # output = predictions.eval({x: evalx, y: evaly})
+    # score = sklearn.metrics.precision_recall_fscore_support(evaly, output, average='binary')
+    # print(score)
