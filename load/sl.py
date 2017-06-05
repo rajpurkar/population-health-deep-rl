@@ -6,7 +6,7 @@ from predict import *
 
 # Parameters
 learning_rate = 0.001
-training_epochs = 15
+training_epochs = 1
 batch_size = 100
 display_step = 1
 total_batch = 10
@@ -17,6 +17,11 @@ n_hidden_2 = 256 # 2nd layer number of features
 n_input = 295
 n_classes = 2
 
+def get_fake_dataset(batch_size, width, height, depth):
+ 	batch_x = np.random.rand(batch_size, width, height, depth)
+ 	batch_y = np.random.randint(n_classes, size=(batch_size))
+ 	batch_y = np.array(batch_y)
+ 	return batch_x, batch_y
 
 def get_dataset(file = "../../mis-data/kepr7hdt/KEPR7HFL.DTA.CSV-processed.csv-postprocessed.csv"):
     df = pd.read_csv(file, low_memory=False)
@@ -51,9 +56,22 @@ def network(x, weights, biases):
     out_layer = tf.matmul(layer_2, weights['out']) + biases['out']
     return out_layer
 
+# Create model
+def cnn_network(x):
+    out = x
+    out = layers.convolution2d(out, num_outputs=32, kernel_size=[8,8], activation_fn=tf.nn.relu, stride=4)
+    out = layers.convolution2d(out, num_outputs=64, kernel_size=[4,4], activation_fn=tf.nn.relu, stride=2)
+    out = layers.convolution2d(out, num_outputs=64, kernel_size=[3,3], activation_fn=tf.nn.relu, stride=1)
+    out = layers.flatten(out)
+    out = layers.fully_connected(out, 512, activation_fn=tf.nn.relu)
+    out = layers.fully_connected(out, n_classes, activation_fn=None)
+    return out
+
 # tf Graph input
-x = tf.placeholder("float", [None, n_input])
-y = tf.placeholder("int64", [None, ])
+def add_placeholder(width, height, depth):
+    x = tf.placeholder("float", [None, width, height, depth])
+    y = tf.placeholder("int64", [None, ])
+    return x, y
 
 # Store layers weight & bias
 weights = {
@@ -67,10 +85,17 @@ biases = {
     'out': tf.Variable(tf.random_normal([n_classes]))
 }
 
-input_X, input_y = get_dataset()
+input_X, input_y = get_fake_dataset(batch_size*total_batch, 103, 1, 400)
+
+width = input_X.shape[1]
+height = input_X.shape[2]
+depth = input_X.shape[3]
+
+#get placeholders:
+x, y = add_placeholder(width, height, depth)
 
 # Construct model
-pred = network(x, weights, biases)
+pred = cnn_network(x)
 
 # Define loss and optimizer
 cost = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=pred, labels=y))
@@ -89,7 +114,6 @@ with tf.Session() as sess:
         # Loop over all batches
         for i in range(total_batch - 1):
             batch_x, batch_y = get_next_batch(input_X, input_y, i, batch_size)
-            # Run optimization op (backprop) and cost op (to get loss value)
             _, c = sess.run([optimizer, cost], feed_dict={x: batch_x,
                                                           y: batch_y})
             # Compute average loss
@@ -102,11 +126,9 @@ with tf.Session() as sess:
 
     # Test model
     predictions = tf.argmax(pred, 1)
-    print(y)
-    #y_argmax = tf.argmax(y, 1)
     correct_prediction = tf.equal(predictions, y)
     # Calculate accuracy
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
-    evalx, evaly = get_next_batch(input_X, input_y, total_batch, batch_size)
+    evalx, evaly = get_next_batch(input_X, input_y, total_batch - 1, batch_size)
     print("Accuracy:", accuracy.eval({x: evalx, y: evaly}))
     array_pred = predictions.eval({x: evalx, y: evaly})
