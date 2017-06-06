@@ -11,29 +11,44 @@ import glob
 import csv
 from tqdm import tqdm
 import pandas as pd
+import numpy as np
 
+
+def filter_na_for_field(df, must_have_field):
+    matching_cols = filter(lambda x: must_have_field.lower() in x.lower(), df)
+    assert(len(matching_cols) == 1)
+    right_col = matching_cols[0]
+    df[right_col].replace('', np.nan, inplace=True)
+    df = df.loc[df[right_col].notnull()]
+    return df
 
 def post_process(file, must_have_field=None, verbose=False):
     df = pd.read_csv(file, low_memory=False)
     if must_have_field is not None:
-        matching_cols = filter(lambda x: must_have_field.lower() in x.lower(), df)
-        assert(len(matching_cols) == 1)
-        right_col = matching_cols[0]
-        df = df.loc[df[right_col].notnull()]
+        df = filter_na_for_field(df, must_have_field)
+
+    avoid_phrases = [
+        "ID",
+        "Presence",
+        "age ",
+        "Result of malaria measurement",
+        "Number",
+        "Relationship structure"
+    ]
 
     selected = []
     for col in df:
         num_zero = sum(pd.isnull(df[col]))
         if  (
-                # num_zero < (len(df) / 2.0)
                 num_zero == 0
                 and len(df[col].unique()) > 1
                 and len(df[col].unique()) <= 10
-                and "ID" not in col):
+                and not any([phrase in col for phrase in avoid_phrases])
+            ):
             selected.append(col)
             if verbose is True:
                 print(col, num_zero)
-    df.to_csv(file + '-postprocessed.csv',
+    df.to_csv(os.path.dirname(file) + '/post-processed.csv',
         columns = selected,
         mode = 'w',
         index=False)
