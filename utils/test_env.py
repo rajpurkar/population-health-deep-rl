@@ -35,7 +35,7 @@ class EnvTest(object):
         self.feature_length = config.state_shape[0]
 
         assert(self.config.max_steps <= self.feature_length)
-        
+
         self.action_space = ActionSpace(self.feature_length + self.num_classes) # extra quit actions
         self.observation_space = ObservationSpace(self.config.state_shape)
 
@@ -49,15 +49,7 @@ class EnvTest(object):
         self.action_space.rem_actions = range(self.action_space.n)
         return self.cur_state
 
-    def step(self, action):
-        assert(action < self.feature_length + self.num_classes)
-        self.num_iters += 1
-        
-        if self.config.no_repeats is True or self.config.no_sample_repeats is True:
-            if action in self.action_space.rem_actions:
-                self.action_space.rem_actions.remove(action)
-        
-        done = (self.num_iters > self.max_steps) or (int(action) >= self.feature_length)
+    def set_reward(self, done, action):
         if done is True:
             if self.y == int(action - self.feature_length):
                 self.reward = self.config.correctAnswerReward
@@ -66,7 +58,18 @@ class EnvTest(object):
         else:
             self.reward = self.config.queryReward
             self.cur_state[action] = self.real_state[action]
-        
+
+
+    def step(self, action):
+        assert(action < self.feature_length + self.num_classes)
+        self.num_iters += 1
+
+        if self.config.no_repeats is True or self.config.no_sample_repeats is True:
+            if action in self.action_space.rem_actions:
+                self.action_space.rem_actions.remove(action)
+
+        done = (self.num_iters > self.max_steps) or (int(action) >= self.feature_length)
+        self.set_reward(done, action)
         return self.cur_state, self.reward, done
 
     def render(self):
