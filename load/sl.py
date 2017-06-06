@@ -53,10 +53,6 @@ def split_data(train_frac=0.8):
     return train_X, train_y, train_weights, test_X, test_y, test_weights
 
 
-def get_3d_data(file = "data/KE_2015_MIS_05232017_1847_107786/kepr7hdt/KEPR7HFL.DTA.CSV-processed.csv-postprocessed.csv"):
-    return get_X_Y_from_data(file)
-
-
 def get_next_batch(X, y, weights, i, batch_size):
     batch_X = X[i*batch_size: i*batch_size+ batch_size]
     batch_y = y[i*batch_size: i*batch_size+ batch_size]
@@ -150,7 +146,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('file', help='File to predict')
     args = parser.parse_args()
-    input_X, input_y, _ = get_3d_data(args.file)
+    input_X, input_y, _ = get_X_Y_from_data(args.file)
     print ("Inputx shape: ", input_X.shape)
     print ("Inputy shape: ", input_y.shape)
 
