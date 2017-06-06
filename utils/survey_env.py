@@ -52,7 +52,7 @@ class SurveyEnv(EnvTest):
 
     def reset(self):
         self.real_state, self.y = get_next(self.input_X, self.input_y, self.pos_ex, self.neg_ex)
-        self.counter = (self.counter + 1) % self.max_episodes
+        #self.counter = (self.counter + 1) % self.max_episodes
         self.num_iters = 0
         self.cur_state = np.ones((self.state_shape)) * -1
         self.action_space.rem_actions = range(self.action_space.n)
