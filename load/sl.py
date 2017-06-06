@@ -5,15 +5,15 @@ import tensorflow.contrib.layers as layers
 from predict import *
 
 # Parameters
-training_epochs = 15
-batch_size = 32
+training_epochs = 75
+batch_size = 100
 display_step = 1
 eval_step = 1
 
 # Network Parameters
 n_classes = 2
-learning_rate = 0.000001
-reg = 1e-3
+learning_rate = 0.0001
+reg = 0
 
 
 def get_fake_dataset(batch_size, width, height, depth):
@@ -36,14 +36,31 @@ def get_dataset(file):
     return input_X, input_y
 
 
+def split_data(train_frac=0.8):
+    total_data = len(input_y)
+    print(total_data)
+    num_train = int(train_frac * total_data)
+    assert num_train > 0
+
+    train_X = input_X[:num_train]
+    train_y = input_y[:num_train]
+    train_weights = input_weights[:num_train]
+
+    test_X = input_X[num_train:]
+    test_y = input_y[num_train:]
+    test_weights = input_weights[num_train:]
+
+    return train_X, train_y, train_weights, test_X, test_y, test_weights
+
+
 def get_3d_data(file = "data/KE_2015_MIS_05232017_1847_107786/kepr7hdt/KEPR7HFL.DTA.CSV-processed.csv-postprocessed.csv"):
     return get_X_Y_from_data(file)
 
 
-def get_next_batch(input_X, input_y, input_weights, i, batch_size):
-    batch_X = input_X[i*batch_size: i*batch_size+ batch_size]
-    batch_y = input_y[i*batch_size: i*batch_size+ batch_size]
-    batch_weights = input_weights[i*batch_size: i*batch_size + batch_size]
+def get_next_batch(X, y, weights, i, batch_size):
+    batch_X = X[i*batch_size: i*batch_size+ batch_size]
+    batch_y = y[i*batch_size: i*batch_size+ batch_size]
+    batch_weights = weights[i*batch_size: i*batch_size + batch_size]
     return batch_X, batch_y, batch_weights
 
 
@@ -94,8 +111,8 @@ def eval(gt_y, output):
 
 
 def run(x, y, weights, pred, cost, optimizer, init):
-
-    total_batch = input_X.shape[0] / batch_size
+    global learning_rate
+    total_batch = train_X.shape[0] / batch_size
     # Launch the graph
     with tf.Session() as sess:
         sess.run(init)
@@ -105,28 +122,27 @@ def run(x, y, weights, pred, cost, optimizer, init):
             avg_cost = 0.
             # Loop over all batches
             for i in range(total_batch - 1):
-                batch_x, batch_y, batch_weights = get_next_batch(input_X, input_y, input_weights, i, batch_size)
+                batch_x, batch_y, batch_weights = get_next_batch(train_X, train_y, train_weights, i, batch_size)
                 train_pred, _, c = sess.run([pred, optimizer, cost], feed_dict={x: batch_x,
                                                                                 y: batch_y,
                                                                                 weights: batch_weights})
                 # Compute average loss
                 avg_cost += c / total_batch
 
+
             # Display logs per epoch step
-            if epoch % display_step == 0:
+            if (epoch+1) % display_step == 0:
                 predictions = tf.arg_max(tf.nn.softmax(train_pred), dimension=1)
                 output = predictions.eval()
-                print(output)
                 score = eval(batch_y, output)
                 print("Epoch:", '%04d' % (epoch+1), "cost={:.9f}".format(avg_cost))
                 print("Train f1 score: ", score)
 
             if epoch % eval_step == 0:
                 # Test model
-                evalx, evaly, evalweights = get_next_batch(input_X, input_y, input_weights, total_batch - 1, batch_size)
                 predictions = tf.arg_max(tf.nn.softmax(pred), dimension=1)
-                output = predictions.eval({x: evalx, y: evaly, weights: evalweights})
-                score = eval(evaly, output)
+                output = predictions.eval({x: test_X, y: test_y, weights: test_weights})
+                score = eval(test_y, output)
                 print("Eval f1 score: ", score)
         print("Optimization Finished!")
 
@@ -141,7 +157,9 @@ if __name__ == '__main__':
     # input_weights = [k+1 for k in input_y]
     neg_count = float(len([k for k in input_y if k == 0]))
     pos_count = float(len([k for k in input_y if k == 1]))
-
     input_weights = [neg_count/pos_count if k == 1. else 1. for k in input_y]
+
+    train_X, train_y, train_weights, test_X, test_y, test_weights = split_data()
+
     x, y, weights, pred, cost, optimizer, init = build(input_X.shape)
     run(x, y, weights, pred, cost, optimizer, init)
