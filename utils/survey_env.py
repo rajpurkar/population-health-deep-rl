@@ -7,16 +7,24 @@ from test_env import ObservationSpace
 from test_env import EnvTest
 from configs.survey_env import RewardConfig
 
-def get_next(input_X, input_y, counter):
-    return input_X[counter], input_y[counter]
+def get_next(input_X, input_y, pos_ex, neg_ex):
+    rand = random.random()
+    threshold = float(len(neg_ex))/float(len(pos_ex)+float(len(neg_ex)))
+    if rand < threshold:
+        idx = random.choice(pos_ex)
+    else:
+        idx = random.choice(neg_ex)
+    return input_X[idx], input_y[idx]
 
 class SurveyEnv(EnvTest):
     def __init__(self, input_X, input_y, feature_names, config):
         # EnvTest.__init__(self, config)
         self.input_X = input_X
         self.input_y = input_y
+        self.neg_ex = [idx for idx, k in enumerate(input_y) if k == 0]
+        self.pos_ex = [idx for idx, k in enumerate(input_y) if k == 1]
         self.feature_names = feature_names
-        self.counter = 0
+        #self.counter = 0
         self.max_episodes = self.input_X.shape[0]
         self.max_steps = config.max_steps
         self.num_classes = config.num_classes
@@ -43,7 +51,7 @@ class SurveyEnv(EnvTest):
             self.cur_state[action] = self.real_state[action]
 
     def reset(self):
-        self.real_state, self.y = get_next(self.input_X, self.input_y, self.counter)
+        self.real_state, self.y = get_next(self.input_X, self.input_y, self.pos_ex, self.neg_ex)
         self.counter = (self.counter + 1) % self.max_episodes
         self.num_iters = 0
         self.cur_state = np.ones((self.state_shape)) * -1
