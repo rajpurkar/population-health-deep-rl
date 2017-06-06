@@ -5,20 +5,22 @@ import tensorflow.contrib.layers as layers
 from predict import *
 
 # Parameters
-learning_rate = 0.0001
-training_epochs = 100
-batch_size = 100
+training_epochs = 15
+batch_size = 32
 display_step = 1
 eval_step = 1
 
 # Network Parameters
-n_classes = 1
+n_classes = 2
+learning_rate = 0.000001
+reg = 1e-3
+
 
 def get_fake_dataset(batch_size, width, height, depth):
- 	batch_x = np.random.rand(batch_size, width, height, depth)
- 	batch_y = np.random.randint(n_classes, size=(batch_size))
- 	batch_y = np.array(batch_y)
- 	return batch_x, batch_y
+    batch_x = np.random.rand(batch_size, width, height, depth)
+    batch_y = np.random.randint(n_classes, size=(batch_size))
+    batch_y = np.array(batch_y)
+    return batch_x, batch_y
 
 
 def get_dataset(file):
@@ -26,14 +28,11 @@ def get_dataset(file):
     y_column_name = 'Final result of malaria from blood smear test'
     columns = list(df.columns)
     num_features = len(columns)
-    input_X = []
-    input_y = []
     cols = list(list(findsubsets(columns, num_features))[0])
     ignore_phrase_columns = [y_column_name.lower(), 'presence of species:', 'rapid test', 'number']
     cols = filter(lambda col: not any(phrase.lower() in col.lower() for phrase in ignore_phrase_columns), cols)
     input_X, feature_names = get_X_cols(df, cols)
     input_y = get_Y_col(df, y_column_name)
-    xdims = input_X.shape
     return input_X, input_y
 
 
@@ -47,21 +46,23 @@ def get_next_batch(input_X, input_y, input_weights, i, batch_size):
     batch_weights = input_weights[i*batch_size: i*batch_size + batch_size]
     return batch_X, batch_y, batch_weights
 
+
 def cnn_network(x):
     out = x
     out = layers.convolution2d(out, num_outputs=10, kernel_size=[1, 1], activation_fn=tf.nn.relu, stride=1)
     out = layers.flatten(out)
     out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
     out = layers.fully_connected(out, n_classes, activation_fn=None)
-    out = tf.reshape(out, shape=(-1,))
     return out
+
 
 # tf Graph input
 def add_placeholder(width, height, depth):
     x = tf.placeholder("float", [None, width, height, depth])
-    y = tf.placeholder("float32", [None, ])
+    y = tf.placeholder("int64", [None, ])
     loss_weights = tf.placeholder("float32", [None, ])
     return x, y, loss_weights
+
 
 def build(input_dim):
     width = input_dim[1]
@@ -75,18 +76,22 @@ def build(input_dim):
     pred = cnn_network(x)
 
     # Define loss and optimizer
-    cost = tf.reduce_mean(tf.losses.sigmoid_cross_entropy(logits=pred, multi_class_labels=y, weights=loss_weights))
+    cost = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(y, pred, weights=loss_weights))
+    l2_loss = 0.
+    for var in tf.trainable_variables():
+        l2_loss += tf.nn.l2_loss(var)
+    cost += reg * l2_loss
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
 
     # Initializing the variables
     init = tf.global_variables_initializer()
     return x, y, loss_weights, pred, cost, optimizer, init
 
+
 def eval(gt_y, output):
-    output[output > 0.5] = 1
-    output[output <= 0.5] = 0
     score = sklearn.metrics.precision_recall_fscore_support(gt_y, output, average='binary')
     return score
+
 
 def run(x, y, weights, pred, cost, optimizer, init):
 
@@ -102,23 +107,25 @@ def run(x, y, weights, pred, cost, optimizer, init):
             for i in range(total_batch - 1):
                 batch_x, batch_y, batch_weights = get_next_batch(input_X, input_y, input_weights, i, batch_size)
                 train_pred, _, c = sess.run([pred, optimizer, cost], feed_dict={x: batch_x,
-                                                              y: batch_y,
-                                                              weights: batch_weights})
+                                                                                y: batch_y,
+                                                                                weights: batch_weights})
                 # Compute average loss
                 avg_cost += c / total_batch
 
             # Display logs per epoch step
             if epoch % display_step == 0:
-                predictions = tf.nn.sigmoid(train_pred)
-                score = eval(batch_y, predictions.eval())
-                print("Epoch:", '%04d' % (epoch+1), "cost=", \
-                    "{:.9f}".format(avg_cost))
+                predictions = tf.arg_max(tf.nn.softmax(train_pred), dimension=1)
+                output = predictions.eval()
+                print(output)
+                score = eval(batch_y, output)
+                print("Epoch:", '%04d' % (epoch+1), "cost={:.9f}".format(avg_cost))
                 print("Train f1 score: ", score)
+
             if epoch % eval_step == 0:
                 # Test model
                 evalx, evaly, evalweights = get_next_batch(input_X, input_y, input_weights, total_batch - 1, batch_size)
-                predictions = tf.nn.sigmoid(pred)
-                output = predictions.eval({x: evalx, y: evaly})
+                predictions = tf.arg_max(tf.nn.softmax(pred), dimension=1)
+                output = predictions.eval({x: evalx, y: evaly, weights: evalweights})
                 score = eval(evaly, output)
                 print("Eval f1 score: ", score)
         print("Optimization Finished!")
@@ -128,14 +135,13 @@ if __name__ == '__main__':
     parser.add_argument('file', help='File to predict')
     args = parser.parse_args()
     input_X, input_y = get_3d_data(args.file)
-    print ("Inputx shape: " , input_X.shape)
-    print ("Inputy shape: " , input_y.shape)
+    print ("Inputx shape: ", input_X.shape)
+    print ("Inputy shape: ", input_y.shape)
 
     # input_weights = [k+1 for k in input_y]
     neg_count = float(len([k for k in input_y if k == 0]))
     pos_count = float(len([k for k in input_y if k == 1]))
 
     input_weights = [neg_count/pos_count if k == 1. else 1. for k in input_y]
-    # print(input_weights)
     x, y, weights, pred, cost, optimizer, init = build(input_X.shape)
     run(x, y, weights, pred, cost, optimizer, init)
