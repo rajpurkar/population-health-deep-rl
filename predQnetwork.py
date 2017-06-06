@@ -1,11 +1,12 @@
 import tensorflow as tf
 import numpy as np
 import tensorflow.contrib.layers as layers
+import argparse
 
 from utils.general import get_logger
 from utils.test_env import EnvTest
 from core.deep_q_learning import DQN
-
+from utils.survey_env import SurveyEnv
 
 class ActPredDQN(DQN):
     def add_placeholders_op(self):
@@ -32,7 +33,7 @@ class ActPredDQN(DQN):
 
     def add_update_target_op(self, q_scope, target_q_scope):
         """
-        update_target_op will be called periodically 
+        update_target_op will be called periodically
         to copy Q network weights to target Q network
         """
         q_variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=q_scope)
@@ -87,7 +88,7 @@ class ActPredDQN(DQN):
         Returns Q values for all actions
 
         Args:
-            state: (tf tensor) 
+            state: (tf tensor)
                 shape = (batch_size, img height, img width, nchannels)
             scope: (string) scope name, that specifies if target network or not
             reuse: (bool) reuse of variables in the scope
@@ -108,7 +109,10 @@ class ActPredDQN(DQN):
 Use deep Q network for test environment.
 """
 if __name__ == '__main__':
-    from configs.test_env import config
-    env = EnvTest(config)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('file', help='File to predict')
+    args = parser.parse_args()
+    from configs.survey_env import config
+    env = SurveyEnv(args.file, config)
     model = ActPredDQN(env, config)
     model.run()

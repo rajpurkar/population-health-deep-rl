@@ -150,7 +150,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('file', help='File to predict')
     args = parser.parse_args()
-    input_X, input_y = get_3d_data(args.file)
+    input_X, input_y, _ = get_3d_data(args.file)
     print ("Inputx shape: ", input_X.shape)
     print ("Inputy shape: ", input_y.shape)
 
