@@ -121,7 +121,7 @@ def run(x, y, weights, pred, cost, optimizer, init):
         for epoch in range(training_epochs):
             avg_cost = 0.
             # Loop over all batches
-            for i in range(total_batch - 1):
+            for i in range(total_batch ):
                 batch_x, batch_y, batch_weights = get_next_batch(train_X, train_y, train_weights, i, batch_size)
                 train_pred, _, c = sess.run([pred, optimizer, cost], feed_dict={x: batch_x,
                                                                                 y: batch_y,
@@ -160,6 +160,8 @@ if __name__ == '__main__':
     input_weights = [neg_count/pos_count if k == 1. else 1. for k in input_y]
 
     train_X, train_y, train_weights, test_X, test_y, test_weights = split_data()
+    print(train_X.shape)
+    print(train_y.shape)
 
     x, y, weights, pred, cost, optimizer, init = build(input_X.shape)
     run(x, y, weights, pred, cost, optimizer, init)
