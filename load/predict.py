@@ -32,7 +32,6 @@ def get_Y_col(df, col_name):
 
 
 def get_X_Y_from_data(file, **params):
-    assert(os.path.basename(file) == 'post-processed.csv')
     df = pd.read_csv(file, low_memory=False)
     y_column_name = 'Final result of malaria from blood smear test'
     cols = list(df.columns)
@@ -44,7 +43,7 @@ def get_X_Y_from_data(file, **params):
 
 def predict_from_data(file):
     import sklearn.linear_model
-    X, y = get_X_Y_from_data(file, flatten=True)
+    X, y, feature_names = get_X_Y_from_data(file, flatten=True)
     clf = sklearn.linear_model.LogisticRegression()
     predictions = cross_val_predict(clf, X, y, n_jobs=-1, verbose=1)
     score = sklearn.metrics.precision_recall_fscore_support(y, predictions, average='binary')

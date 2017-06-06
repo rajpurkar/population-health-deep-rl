@@ -33,7 +33,10 @@ def post_process(file, must_have_field=None, verbose=False):
         "age ",
         "Result of malaria measurement",
         "Number",
-        "Relationship structure"
+        "Relationship structure",
+        "campaign",
+        " old ",
+        "index"
     ]
 
     selected = []
