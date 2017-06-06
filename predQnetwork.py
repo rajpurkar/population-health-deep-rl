@@ -112,7 +112,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('file', help='File to predict')
     args = parser.parse_args()
-    from configs.test_env import config
+    from configs.survey_env import config
     env = SurveyEnv(args.file, config)
     model = ActPredDQN(env, config)
     model.run()

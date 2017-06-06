@@ -59,7 +59,6 @@ class EnvTest(object):
             self.reward = self.config.queryReward
             self.cur_state[action] = self.real_state[action]
 
-
     def step(self, action):
         assert(action < self.feature_length + self.num_classes)
         self.num_iters += 1

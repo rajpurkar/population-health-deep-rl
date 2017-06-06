@@ -39,7 +39,7 @@ def get_X_Y_from_data(file, **params):
     cols.remove(y_column_name)
     X, feature_names = get_X_cols(df, cols, **params)
     y = get_Y_col(df, y_column_name)
-    return X, y
+    return X, y, feature_names
 
 
 def predict_from_data(file):
