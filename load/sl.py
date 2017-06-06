@@ -15,26 +15,11 @@ n_classes = 2
 learning_rate = 0.0001
 reg = 0
 
-
 def get_fake_dataset(batch_size, width, height, depth):
     batch_x = np.random.rand(batch_size, width, height, depth)
     batch_y = np.random.randint(n_classes, size=(batch_size))
     batch_y = np.array(batch_y)
     return batch_x, batch_y
-
-
-def get_dataset(file):
-    df = pd.read_csv(file, low_memory=False)
-    y_column_name = 'Final result of malaria from blood smear test'
-    columns = list(df.columns)
-    num_features = len(columns)
-    cols = list(list(findsubsets(columns, num_features))[0])
-    ignore_phrase_columns = [y_column_name.lower(), 'presence of species:', 'rapid test', 'number']
-    cols = filter(lambda col: not any(phrase.lower() in col.lower() for phrase in ignore_phrase_columns), cols)
-    input_X, feature_names = get_X_cols(df, cols)
-    input_y = get_Y_col(df, y_column_name)
-    return input_X, input_y
-
 
 def split_data(train_frac=0.8):
     total_data = len(input_y)
