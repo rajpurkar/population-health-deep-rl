@@ -8,10 +8,6 @@ from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 import itertools
 
 
-def findsubsets(S,m):
-    return set(itertools.combinations(S, m))
-
-
 def get_X_cols(df, names, flatten=False):
     X = df.loc[:, names]
     feature_names = list(X.columns)
@@ -30,9 +26,7 @@ def get_X_cols(df, names, flatten=False):
 
 
 def get_Y_col(df, col_name):
-    y = df[col_name]
-    le = LabelEncoder()
-    y = le.fit_transform(y)
+    y = LabelEncoder().fit_transform(df.loc[:, col_name])
     return y
 
 
@@ -40,8 +34,7 @@ def get_X_Y_from_data(file, **params):
     df = pd.read_csv(file, low_memory=False)
     y_column_name = 'Final result of malaria from blood smear test'
     cols = list(df.columns)
-    ignore_phrase_columns = [y_column_name.lower(), 'presence of species:', 'rapid test', 'number']
-    cols = filter(lambda col: not any(phrase.lower() in col.lower() for phrase in ignore_phrase_columns), cols)
+    cols.remove(y_column_name)
     X, feature_names = get_X_cols(df, cols, **params)
     y = get_Y_col(df, y_column_name)
     return X, y
@@ -61,4 +54,3 @@ if __name__ == '__main__':
     parser.add_argument('file', help='File to predict')
     args = parser.parse_args()
     predict_from_data(args.file)
-
