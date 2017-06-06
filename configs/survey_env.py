@@ -2,22 +2,13 @@ import time
 
 class config():
     # env config
-    state_shape         = (10, 1, 1)
-    max_steps           = 5
-
-    # sampling
-    neccessary_queries  = 3
-    num_classes         = neccessary_queries + 1
+    max_steps           = 30
+    num_classes         = 2
 
     #exploration
     no_repeats          = False
     no_sample_repeats   = False
     random_tie_break    = True
-
-    # reward config
-    correctAnswerReward = 10.
-    wrongAnswerReward   = -1.
-    queryReward         = -2.
 
     # training
     render_train     = False
@@ -27,7 +18,7 @@ class config():
     high             = 1.
 
     # output config
-    output_path  = "results/env_test/" + str(int(time.time())) + '/'
+    output_path  = "results/survey_env_test/" + str(int(time.time())) + '/'
     model_output = output_path + "model.weights/"
     log_path     = output_path + "log.txt"
     plot_output  = output_path + "scores.png"
@@ -59,7 +50,7 @@ class config():
 
 class RewardConfig():
     #Predict Reward
-    correctAnswerReward = 10.
+    correctAnswerReward = 100.
     wrongAnswerReward   = -1.
 
     def __init__(self, feature_names):
