@@ -96,6 +96,12 @@ def build(input_dim):
     init = tf.global_variables_initializer()
     return x, y, loss_weights, pred, cost, optimizer, init
 
+def eval(gt_y, output):
+    output[output > 0.5] = 1
+    output[output <= 0.5] = 0
+    score = sklearn.metrics.precision_recall_fscore_support(gt_y, output, average='binary')
+    return score
+
 def run(x, y, weights, pred, cost, optimizer, init):
 
     total_batch = input_X.shape[0] / batch_size
@@ -109,24 +115,26 @@ def run(x, y, weights, pred, cost, optimizer, init):
             # Loop over all batches
             for i in range(total_batch - 1):
                 batch_x, batch_y, batch_weights = get_next_batch(input_X, input_y, input_weights, i, batch_size)
-                _, c = sess.run([optimizer, cost], feed_dict={x: batch_x,
+                train_pred, _, c = sess.run([pred, optimizer, cost], feed_dict={x: batch_x,
                                                               y: batch_y,
                                                               weights: batch_weights})
                 # Compute average loss
                 avg_cost += c / total_batch
+
             # Display logs per epoch step
             if epoch % display_step == 0:
+                predictions = tf.nn.sigmoid(train_pred)
+                score = eval(batch_y, predictions.eval())
                 print("Epoch:", '%04d' % (epoch+1), "cost=", \
                     "{:.9f}".format(avg_cost))
+                print("Train f1 score: ", score)
             if epoch % eval_step == 0:
                 # Test model
-                predictions = tf.nn.sigmoid(pred)
                 evalx, evaly, evalweights = get_next_batch(input_X, input_y, input_weights, total_batch - 1, batch_size)
+                predictions = tf.nn.sigmoid(pred)
                 output = predictions.eval({x: evalx, y: evaly})
-                output[output > 0.5] = 1
-                output[output <= 0.5] = 0
-                score = sklearn.metrics.precision_recall_fscore_support(evaly, output, average='binary')
-                print(score)
+                score = eval(evaly, output)
+                print("Eval f1 score: ", score)
         print("Optimization Finished!")
 
 if __name__ == '__main__':
