@@ -59,16 +59,23 @@ def get_parent_field(field, fields_to_parent_fields):
     return parent_field
 
 
-def get_interpret_value(field, value, field_value_label):
+def interpret_val(
+        field,
+        fields_to_parent_fields,
+        value,
+        field_value_label):
+    parent_field = get_parent_field(
+                field, fields_to_parent_fields)
+
     if value == '': return value
     interpret_value = value
-    if field in field_value_label:
+    if parent_field in field_value_label:
         try:
             value = str(int(float(value)))
         except:
             value = value
-        if (value in field_value_label[field]):
-            interpret_value = field_value_label[field][value]
+        if (value in field_value_label[parent_field]):
+            interpret_value = field_value_label[parent_field][value]
     return interpret_value
 
 
@@ -90,15 +97,48 @@ def filter_headers(
 
 
 def convert_field_to_name(field, fields_to_names):
-    return fields_to_names[field]
+    if field in fields_to_names:
+        return fields_to_names[field]
+    else:
+        return field
 
 
-def process(csv_file, do_file, dct_file, verbose=False):
-    fields_to_types = process_types(dct_file)
+def load_files(data_folder):
+    try:
+        csv_file = glob.glob(data_folder + '/*.CSV')[0]
+        do_file = glob.glob(data_folder + '/*.DO')[0]
+    except:
+        print("Make sure folder has a CSV, DO, and DCT file")
+        raise
+    try:
+        dct_file = glob.glob(data_folder + '/*.DCT')[0]
+    except:
+        dct_file = None
+    return csv_file, do_file, dct_file
+
+
+def load_structures(data_folder):
+    csv_file, do_file, dct_file = load_files(data_folder)
+    fields_to_types = {}
+    if dct_file is not None:
+        fields_to_types = process_types(dct_file)
     (fields_to_names,
     fields_to_parent_fields,
     field_to_values_to_label) = process_metadata(do_file)
     reader = csv.DictReader(open(csv_file, 'r'))
+    return (reader, 
+        fields_to_names,
+        fields_to_parent_fields,
+        field_to_values_to_label,
+        fields_to_types)
+
+
+def process(data_folder, verbose=False):
+    (reader, 
+        fields_to_names,
+        fields_to_parent_fields,
+        field_to_values_to_label,
+        fields_to_types) = load_structures(data_folder)
     headers = reader.fieldnames
     filtered_headers = filter_headers(
         headers,
@@ -107,7 +147,7 @@ def process(csv_file, do_file, dct_file, verbose=False):
     named_headers = [convert_field_to_name(
         field, fields_to_names) for field in filtered_headers]
     writer = csv.DictWriter(
-        open(csv_file + '-processed.csv', 'w+'),
+        open(data_folder + '/processed.csv', 'w+'),
         fieldnames=named_headers)
     writer.writeheader()
     for row in tqdm(reader):
@@ -115,10 +155,11 @@ def process(csv_file, do_file, dct_file, verbose=False):
         for field in filtered_headers:
             name = convert_field_to_name(field, fields_to_names)
             value = row[field].strip()
-            parent_field = get_parent_field(
-                field, fields_to_parent_fields)
-            interpret_value = get_interpret_value(
-                parent_field, value, field_to_values_to_label)
+            interpret_value = interpret_val(
+                field,
+                fields_to_parent_fields,
+                value,
+                field_to_values_to_label)
             output_row[name] = interpret_value
             if verbose is True:
                 print("{: >10.10} {: >50.50} {:<15.15}"
@@ -131,10 +172,4 @@ if __name__ == '__main__':
     parser.add_argument('data_folder', help='data folder to load')
     parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
-    try:
-        csv_file = glob.glob(args.data_folder + '/*.CSV')[0]
-        do_file = glob.glob(args.data_folder + '/*.DO')[0]
-        dct_file = glob.glob(args.data_folder + '/*.DCT')[0]
-    except:
-        print("Make sure folder has a CSV, DO, and DCT file")
-    process(csv_file, do_file, dct_file, args.verbose)
+    process(args.data_folder, args.verbose)
