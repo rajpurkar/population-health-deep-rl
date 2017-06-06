@@ -2,7 +2,7 @@ import time
 
 class config():
     # env config
-    max_steps           = 30
+    max_steps           = 5
     num_classes         = 2
 
     #exploration

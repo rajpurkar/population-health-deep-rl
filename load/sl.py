@@ -23,23 +23,6 @@ def get_fake_dataset(batch_size, width, height, depth, n_classes=2):
     batch_y = np.array(batch_y)
     return batch_x, batch_y
 
-def split_data(train_frac=0.8):
-    total_data = len(input_y)
-    print(total_data)
-    num_train = int(train_frac * total_data)
-    assert num_train > 0
-
-    train_X = input_X[:num_train]
-    train_y = input_y[:num_train]
-    train_weights = input_weights[:num_train]
-
-    test_X = input_X[num_train:]
-    test_y = input_y[num_train:]
-    test_weights = input_weights[num_train:]
-
-    return train_X, train_y, train_weights, test_X, test_y, test_weights
-
-
 def get_next_batch(X, y, weights, i, batch_size):
     batch_X = X[i*batch_size: i*batch_size+ batch_size]
     batch_y = y[i*batch_size: i*batch_size+ batch_size]
@@ -167,7 +150,9 @@ if __name__ == '__main__':
     pos_count = float(len([k for k in input_y if k == 1]))
     input_weights = [neg_count/pos_count if k == 1. else 1. for k in input_y]
 
-    train_X, train_y, train_weights, test_X, test_y, test_weights = split_data()
+    train_X, train_y, train_weights, test_X, test_y, test_weights = split_data(0.8, input_X, input_y, input_weights)
+    print(train_X.shape)
+    print(train_y.shape)
 
     config = Config()
     if args.overfit:
