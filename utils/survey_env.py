@@ -11,13 +11,15 @@ def get_next(input_X, input_y, counter):
     return input_X[counter], input_y[counter]
 
 class SurveyEnv(EnvTest):
-    def __init__(self, survey_file, config):
+    def __init__(self, input_X, input_y, feature_names, config):
         # EnvTest.__init__(self, config)
-        self.input_X, self.input_y, self.feature_names = get_X_Y_from_data(survey_file)
+        self.input_X = input_X
+        self.input_y = input_y
+        self.feature_names = feature_names
         self.counter = 0
         self.max_episodes = self.input_X.shape[0]
         self.max_steps = config.max_steps
-        self.num_classes = 2
+        self.num_classes = config.num_classes
         self.config = config
         self.reward_config = RewardConfig(self.feature_names)
         self.state_shape = self.input_X.shape[1:]
@@ -42,7 +44,7 @@ class SurveyEnv(EnvTest):
 
     def reset(self):
         self.real_state, self.y = get_next(self.input_X, self.input_y, self.counter)
-        self.counter = self.counter + 1 % self.max_episodes
+        self.counter = (self.counter + 1) % self.max_episodes
         self.num_iters = 0
         self.cur_state = np.ones((self.state_shape)) * -1
         self.action_space.rem_actions = range(self.action_space.n)

@@ -40,6 +40,24 @@ def get_X_Y_from_data(file, **params):
     y = get_Y_col(df, y_column_name)
     return X, y, feature_names
 
+def split_data(train_frac, input_X, input_y, input_weights=None):
+    total_data = len(input_y)
+    print(total_data)
+    num_train = int(train_frac * total_data)
+    assert num_train > 0
+
+    train_X = input_X[:num_train]
+    train_y = input_y[:num_train]
+
+    test_X = input_X[num_train:]
+    test_y = input_y[num_train:]
+
+    if input_weights is not None:
+        train_weights = input_weights[:num_train]
+        test_weights = input_weights[num_train:]
+        return train_X, train_y, train_weights, test_X, test_y, test_weights
+    else:
+        return train_X, train_y, test_X, test_y
 
 def predict_from_data(file):
     import sklearn.linear_model

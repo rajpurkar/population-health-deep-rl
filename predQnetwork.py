@@ -7,6 +7,8 @@ from utils.general import get_logger
 from utils.test_env import EnvTest
 from core.deep_q_learning import DQN
 from utils.survey_env import SurveyEnv
+from configs.survey_env import config
+from load.predict import *
 
 class ActPredDQN(DQN):
     def add_placeholders_op(self):
@@ -112,7 +114,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('file', help='File to predict')
     args = parser.parse_args()
-    from configs.survey_env import config
-    env = SurveyEnv(args.file, config)
-    model = ActPredDQN(env, config)
+
+    #get data
+    input_X, input_y, feature_names = get_X_Y_from_data(args.file)
+    train_X, train_y, test_X, test_y = split_data(0.8, input_X, input_y)
+
+    env = SurveyEnv(train_X, train_y, feature_names, config)
+    test_env = SurveyEnv(test_X, test_y, feature_names, config)
+    model = ActPredDQN(env, test_env, config)
     model.run()
