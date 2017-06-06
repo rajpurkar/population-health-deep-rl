@@ -66,6 +66,9 @@ class RewardConfig():
         self.reward_dict = {}
         for name in feature_names:
             self.reward_dict[name] = -2.
+        self.reward_dict['Region'] = 0
+        self.reward_dict['Malaria endemicity'] = 0
+
 
     def get_reward(self, action):
         assert(action in self.reward_dict)
