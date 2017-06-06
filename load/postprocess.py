@@ -25,9 +25,11 @@ def post_process(file, must_have_field=None, verbose=False):
     for col in df:
         num_zero = sum(pd.isnull(df[col]))
         if  (
-                num_zero < (len(df) / 2.0)
+                # num_zero < (len(df) / 2.0)
+                num_zero == 0
                 and len(df[col].unique()) > 1
-                and len(df[col].unique()) <= 10):
+                and len(df[col].unique()) <= 10
+                and "ID" not in col):
             selected.append(col)
             if verbose is True:
                 print(col, num_zero)
@@ -41,7 +43,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Post process data.')
     parser.add_argument('file', help='File to postprocess')
     parser.add_argument('--verbose', help='verbose flag', action='store_true')
-    parser.add_argument('--must_have', help='must_have_field')
+    parser.add_argument(
+        '--must_have',
+        help='must_have_field',
+        default='Final result of malaria from blood smear test')
     args = parser.parse_args()
     post_process(args.file,
         must_have_field=args.must_have,
