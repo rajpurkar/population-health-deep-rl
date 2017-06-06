@@ -2,6 +2,7 @@ from __future__ import print_function
 import pandas as pd
 import numpy as np
 import argparse
+import os
 import sklearn.metrics
 from sklearn.model_selection import cross_val_predict
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
@@ -31,6 +32,7 @@ def get_Y_col(df, col_name):
 
 
 def get_X_Y_from_data(file, **params):
+    assert(os.path.basename(file) == 'post-processed.csv')
     df = pd.read_csv(file, low_memory=False)
     y_column_name = 'Final result of malaria from blood smear test'
     cols = list(df.columns)

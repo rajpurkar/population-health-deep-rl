@@ -1,1 +1,4 @@
-python load_data.py --output_dir=./data data/iaar51fl.dta
+```bash
+bash load.sh {path_to_dhs_folder}
+python load/sl.py {path_to_dhs_folder}/post-processed.csv
+```
