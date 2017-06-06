@@ -6,7 +6,7 @@ from predict import *
 
 # Parameters
 learning_rate = 0.0001
-training_epochs = 50
+training_epochs = 100
 batch_size = 100
 display_step = 1
 eval_step = 1
@@ -51,20 +51,6 @@ def cnn_network(x):
     out = x
     out = layers.convolution2d(out, num_outputs=10, kernel_size=[1, 1], activation_fn=tf.nn.relu, stride=1)
     out = layers.flatten(out)
-    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
-    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
-    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
-    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
-    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
-    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
-    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
-    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
-    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
-    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
-    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
-    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
-    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
-    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
     out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
     out = layers.fully_connected(out, n_classes, activation_fn=None)
     out = tf.reshape(out, shape=(-1,))
@@ -136,6 +122,12 @@ if __name__ == '__main__':
     input_X, input_y = get_3d_data(args.file)
     print ("Inputx shape: " , input_X.shape)
     print ("Inputy shape: " , input_y.shape)
-    input_weights = [k+1 for k in input_y]
+
+    # input_weights = [k+1 for k in input_y]
+    neg_count = float(len([k for k in input_y if k == 0]))
+    pos_count = float(len([k for k in input_y if k == 1]))
+
+    input_weights = [neg_count/pos_count if k == 1. else 1. for k in input_y]
+    # print(input_weights)
     x, y, weights, pred, cost, optimizer, init = build(input_X.shape)
     run(x, y, weights, pred, cost, optimizer, init)
