@@ -68,6 +68,5 @@ class Dataset(object):
 if __name__ == '__main__':
     import sys
     d = Dataset(sys.argv[1])
-    print(d.state_shape)
     for i in range(50):
         print(d.sample()[1]) # should be ~equal 0 and 1

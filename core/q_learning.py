@@ -15,7 +15,7 @@ class QN(object):
     """
     Abstract Class for implementing a Q Network
     """
-    def __init__(self, train_env, test_env, config, logger=None):
+    def __init__(self, env, config, logger=None):
         """
         Initialize Q Network and env
 
@@ -32,8 +32,7 @@ class QN(object):
         self.logger = logger
         if logger is None:
             self.logger = get_logger(config.log_path)
-        self.env = train_env
-        self.test_env = test_env
+        self.env = env
         # build model
         self.build()
 
@@ -157,14 +156,14 @@ class QN(object):
 
         t = last_eval = last_record = 0 # time control of nb of steps
         scores_eval = [] # list of scores computed at iteration time
-        scores_eval += [self.evaluate(self.test_env)]
+        scores_eval += [self.evaluate('test')]
 
         prog = Progbar(target=self.config.nsteps_train)
 
         # interact with environment
         while t < self.config.nsteps_train:
             total_reward = 0
-            state = self.env.reset()
+            state = self.env.reset('train')
             while True:
                 t += 1
                 last_eval += 1
@@ -220,7 +219,7 @@ class QN(object):
                 # evaluate our policy
                 last_eval = 0
                 print("")
-                scores_eval += [self.evaluate(self.test_env)]
+                scores_eval += [self.evaluate('test')]
 
             if (t > self.config.learning_start) and self.config.record and (last_record > self.config.record_freq):
                 self.logger.info("Recording...")
@@ -230,7 +229,7 @@ class QN(object):
         # last words
         self.logger.info("- Training done.")
         self.save()
-        scores_eval += [self.evaluate(self.test_env)]
+        scores_eval += [self.evaluate('test')]
         export_plot(scores_eval, "Scores", self.config.plot_output)
 
 
@@ -260,7 +259,7 @@ class QN(object):
         return loss_eval, grad_eval
 
 
-    def evaluate(self, env, num_episodes=None):
+    def evaluate(self, split, num_episodes=None):
         """
         Evaluation with same procedure as the training
         """
@@ -278,9 +277,9 @@ class QN(object):
 
         for i in range(num_episodes):
             total_reward = 0
-            state = env.reset()
+            state = self.env.reset(split)
             while True:
-                if self.config.render_test: env.render()
+                if self.config.render_test: self.env.render()
 
                 # store last state in buffer
                 idx     = replay_buffer.store_frame(state)
@@ -288,7 +287,7 @@ class QN(object):
 
                 action = self.get_action(q_input)
                 # perform action in env
-                new_state, reward, done = env.step(action)
+                new_state, reward, done = self.env.step(action)
 
                 # store in replay memory
                 replay_buffer.store_effect(idx, action, reward, done)

@@ -3,6 +3,6 @@ from test_env import EnvTest
 
 
 class SurveyEnv(EnvTest):
-    def __init__(self, config, sampler):
-        config.state_shape = self.sampler.state_shape
-        super(SurveyEnv, self).__init__(config, sampler)
+    def __init__(self, c, sampler):
+        c.state_shape = sampler.state_shape
+        super(SurveyEnv, self).__init__(c, sampler)

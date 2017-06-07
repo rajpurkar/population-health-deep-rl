@@ -53,7 +53,7 @@ class EnvTest(object):
     def reset(self, split='train'):
         self.real_state, self.y = self.sampler.sample(split)
         self.num_iters = 0
-        self.cur_state = np.ones((self.feature_length, 1, 1)) * -1
+        self.cur_state = np.ones_like(self.real_state) * -1
         self.action_space.rem_actions = range(self.action_space.n)
         return self.cur_state
 

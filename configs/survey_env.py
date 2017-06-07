@@ -13,6 +13,7 @@ class config():
 
     correctAnswerReward = 10.
     wrongAnswerReward   = -1.
+    queryReward         = -2.
 
     #exploration
     no_repeats          = False
