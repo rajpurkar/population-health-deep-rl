@@ -5,17 +5,11 @@ class config():
     max_steps           = 5
     num_classes         = 2
 
-    # reward
-    """
-    reward_dict         = { 'Region': 0.0,
-                            'Malaria endemicity': 0.0}
-    """
-
     correctAnswerReward = 10.
     wrongAnswerReward   = -1.
     queryReward         = -2.
-    queryRewardMap      = { 'Region': 0.0,
-                            'Malaria endemicity': 0.0}
+    queryRewardMap      = { 'Region': -2.0,
+                            'Malaria endemicity': -2.0}
 
     #exploration
     no_repeats          = False
