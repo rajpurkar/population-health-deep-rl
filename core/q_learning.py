@@ -81,7 +81,7 @@ class QN(object):
         raise NotImplementedError
 
 
-    def get_action(self, state):
+    def get_action(self, state, force_pred=False):
         """
         Returns action with some epsilon strategy
 
@@ -89,9 +89,9 @@ class QN(object):
             state: observation from gym
         """
         if np.random.random() < self.config.soft_epsilon:
-            return self.env.action_space.sample(self.config.no_sample_repeats)
+            return self.env.action_space.sample(self.config.no_sample_repeats, force_pred)
         else:
-            return self.get_best_action(state)[0]
+            return self.get_best_action(state, force_pred)[0]
 
 
     def update_target_params(self):
@@ -164,6 +164,7 @@ class QN(object):
         while t < self.config.nsteps_train:
             total_reward = 0
             state = self.env.reset('train')
+            num_steps = 0
             while True:
                 t += 1
                 last_eval += 1
@@ -173,9 +174,17 @@ class QN(object):
                 idx      = replay_buffer.store_frame(state)
                 q_input = replay_buffer.encode_recent_observation()
 
+                force_pred = False
+                if num_steps >= (self.config.max_steps - 1) and self.config.force_pred is True:
+                    force_pred = True
+                num_steps += 1
+
                 # chose action according to current Q and exploration
-                best_action, q_values = self.get_best_action(q_input)
-                action                = exp_schedule.get_action(best_action, self.config.no_sample_repeats)
+                best_action, q_values = self.get_best_action(q_input, force_pred)
+                if force_pred is False:
+                    action = exp_schedule.get_action(best_action, self.config.no_sample_repeats)
+                else:
+                    action = best_action
 
                 # store q values
                 max_q_values.append(max(q_values))
@@ -278,6 +287,7 @@ class QN(object):
         for i in range(num_episodes):
             total_reward = 0
             state = self.env.reset(split)
+            num_steps = 0
             while True:
                 if self.config.render_test: self.env.render()
 
@@ -285,7 +295,12 @@ class QN(object):
                 idx     = replay_buffer.store_frame(state)
                 q_input = replay_buffer.encode_recent_observation()
 
-                action = self.get_action(q_input)
+                force_pred = False
+                if num_steps >= (self.config.max_steps - 1) and self.config.force_pred is True:
+                    force_pred = True
+                num_steps += 1
+
+                action = self.get_action(q_input, force_pred)
                 # perform action in env
                 new_state, reward, done = self.env.step(action)
 

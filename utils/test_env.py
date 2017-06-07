@@ -7,7 +7,7 @@ class SampleDataset(object):
         assert(first_n <= feature_length)
         self.feature_length = feature_length
         self.first_n = first_n
-        
+
     def sample(self, split):
         assert(split in ['train', 'test'])
         x = [random.choice([0, 1]) for _ in range(self.feature_length)]
@@ -22,11 +22,15 @@ def sample_generate(feature_length=None, first_n=None):
     return np.array(x), y
 
 class ActionSpace(object):
-    def __init__(self, n):
-        self.n = n
+    def __init__(self, feature_length, num_classes):
+        self.feature_length = feature_length
+        self.num_classes = num_classes
+        self.n = feature_length + num_classes
         self.rem_actions = None
 
-    def sample(self, no_sample_repeats=False):
+    def sample(self, no_sample_repeats=False, force_pred=False):
+        if force_pred is True:
+            return np.random.randint(self.feature_length, self.num_classes)
         if no_sample_repeats is True:
              return random.choice(self.rem_actions)
         else:
@@ -46,7 +50,7 @@ class EnvTest(object):
 
         assert(self.config.max_steps <= self.feature_length)
 
-        self.action_space = ActionSpace(self.feature_length + self.num_classes) # extra quit actions
+        self.action_space = ActionSpace(self.feature_length, self.num_classes) # extra quit actions
         self.observation_space = ObservationSpace(self.config.state_shape)
         self.reset()
 

@@ -21,6 +21,7 @@ class config():
     no_repeats          = False
     no_sample_repeats   = False
     random_tie_break    = True
+    force_pred          = True
 
     # training
     render_train     = False
