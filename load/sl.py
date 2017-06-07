@@ -1,13 +1,15 @@
 from __future__ import print_function
-import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.layers as layers
 from predict import *
+from utils.survey_env import SurveyEnv
+from configs.survey_env import config as SurveyEnvConfig
 
 
 class Config():
     def __init__(self, epochs=50, batch_size=100, n_classes=2,
-                 learning_rate=5e-4, reg=1e-1, display_step=1, eval_step=1):
+                 learning_rate=5e-4, reg=1e-1, display_step=1, eval_step=1,
+                 weighted_loss=False):
         self.epochs = epochs
         self.batch_size = batch_size
         self.n_classes = n_classes
@@ -15,6 +17,7 @@ class Config():
         self.reg = reg
         self.display_step = display_step
         self.eval_step = eval_step
+        self.weighted_loss = weighted_loss
 
 
 def get_fake_dataset(batch_size, width, height, depth, n_classes=2):
@@ -23,11 +26,16 @@ def get_fake_dataset(batch_size, width, height, depth, n_classes=2):
     batch_y = np.array(batch_y)
     return batch_x, batch_y
 
-def get_next_batch(X, y, weights, i, batch_size):
-    batch_X = X[i*batch_size: i*batch_size+ batch_size]
-    batch_y = y[i*batch_size: i*batch_size+ batch_size]
-    batch_weights = weights[i*batch_size: i*batch_size + batch_size]
-    return batch_X, batch_y, batch_weights
+
+def get_next_batch(env, batch_size):
+    batch_X = []
+    batch_y = []
+    for k in xrange(0, batch_size):
+        ex_x, ex_y = env.reset(get_y=True)
+        batch_X.append(ex_x)
+        batch_y.append(ex_y)
+
+    return np.asarray(batch_X), np.asarray(batch_y)
 
 
 def cnn_network(config, x):
@@ -43,8 +51,7 @@ def cnn_network(config, x):
 def add_placeholder(width, height, depth):
     x = tf.placeholder("float", [None, width, height, depth])
     y = tf.placeholder("int64", [None, ])
-    loss_weights = tf.placeholder("float32", [None, ])
-    return x, y, loss_weights
+    return x, y
 
 
 def build(config, input_dim):
@@ -53,13 +60,13 @@ def build(config, input_dim):
     depth = input_dim[3]
 
     #get placeholders:
-    x, y, loss_weights = add_placeholder(width, height, depth)
+    x, y = add_placeholder(width, height, depth)
 
     # Construct model
     pred = cnn_network(config, x)
 
     # Define loss and optimizer
-    cost = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(y, pred, weights=loss_weights))
+    cost = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(y, pred))
     l2_loss = 0.
     for var in tf.trainable_variables():
         l2_loss += tf.nn.l2_loss(var)
@@ -69,15 +76,22 @@ def build(config, input_dim):
 
     # Initializing the variables
     init = tf.global_variables_initializer()
-    return x, y, loss_weights, pred, cost, optimizer, init
+    return x, y, pred, cost, optimizer, init
 
 
-def eval(gt_y, output):
-    score = sklearn.metrics.precision_recall_fscore_support(gt_y, output, average='binary')
-    return score
+def get_rewards(env, gt_y, output):
+    total_reward = 0.
+    for name in feature_names:
+        total_reward += env.reward_config.get_reward(name)
+
+    rewards = np.ones_like(output) * total_reward
+    rewards[output == gt_y] = env.reward_config.correctAnswerReward
+    rewards[output != gt_y] = env.reward_config.wrongAnswerReward
+
+    return np.mean(rewards)
 
 
-def run(x, y, weights, pred, cost, optimizer, init, config=None, overfit=True):
+def run(train_env, test_env, x, y, pred, cost, optimizer, init, config=None, overfit=True):
     if config is None:
         config = Config()
 
@@ -100,11 +114,10 @@ def run(x, y, weights, pred, cost, optimizer, init, config=None, overfit=True):
             all_train_preds = None
             all_train_y = None
 
-            for i in range(total_batch ):
-                batch_x, batch_y, batch_weights = get_next_batch(train_X, train_y, train_weights, i, config.batch_size)
+            for i in range(total_batch):
+                batch_x, batch_y = get_next_batch(train_env, config.batch_size)
                 train_pred, _, c = sess.run([pred, optimizer, cost], feed_dict={x: batch_x,
-                                                                                y: batch_y,
-                                                                                weights: batch_weights})
+                                                                                y: batch_y})
                 predictions = tf.arg_max(tf.nn.softmax(train_pred), dimension=1)
                 output = predictions.eval()
                 if all_train_preds is None:
@@ -123,16 +136,17 @@ def run(x, y, weights, pred, cost, optimizer, init, config=None, overfit=True):
             if (epoch+1) % config.display_step == 0:
                 print(len(all_train_y))
                 print(len(all_train_preds))
-                score = eval(all_train_y, all_train_preds)
+                avg_reward = get_rewards(train_env, all_train_y, all_train_preds)
                 print("Epoch:", '%04d' % (epoch+1), "cost={:.9f}".format(avg_cost))
-                print("Train f1 score: ", score)
+                print("Average train reward: {:.2f} ".format(avg_reward))
 
             if (epoch+1) % config.eval_step == 0:
                 # Test model
+                test_batch_X, test_batch_y = get_next_batch(test_env, survey_config.num_episodes_test)
                 predictions = tf.arg_max(tf.nn.softmax(pred), dimension=1)
-                output = predictions.eval({x: test_X, y: test_y, weights: test_weights})
-                score = eval(test_y, output)
-                print("Eval f1 score: ", score)
+                output = predictions.eval({x: test_batch_X, y: test_batch_y})
+                avg_reward = get_rewards(test_env, test_batch_y, output)
+                print("Average test reward: {:.2f}".format(avg_reward))
         print("Optimization Finished!")
 
 if __name__ == '__main__':
@@ -141,18 +155,9 @@ if __name__ == '__main__':
     parser.add_argument('--overfit', action='store_true', help='If specified, tries to overfit to a single batch of '
                                                                'training data')
     args = parser.parse_args()
-    input_X, input_y, _ = get_X_Y_from_data(args.file)
+    input_X, input_y, feature_names = get_X_Y_from_data(args.file)
     print ("Inputx shape: ", input_X.shape)
     print ("Inputy shape: ", input_y.shape)
-
-    # input_weights = [k+1 for k in input_y]
-    neg_count = float(len([k for k in input_y if k == 0]))
-    pos_count = float(len([k for k in input_y if k == 1]))
-    input_weights = [neg_count/pos_count if k == 1. else 1. for k in input_y]
-
-    train_X, train_y, train_weights, test_X, test_y, test_weights = split_data(0.8, input_X, input_y, input_weights)
-    print(train_X.shape)
-    print(train_y.shape)
 
     config = Config()
     if args.overfit:
@@ -160,5 +165,20 @@ if __name__ == '__main__':
         config.epochs = 250
         config.eval_step = 10000  # don't display stats on test set if overfitting
 
-    x, y, weights, pred, cost, optimizer, init = build(config, input_X.shape)
-    run(x, y, weights, pred, cost, optimizer, init, config=config, overfit=args.overfit)
+    # input_weights = [k+1 for k in input_y]
+    if config.weighted_loss:
+        neg_count = float(len([k for k in input_y if k == 0]))
+        pos_count = float(len([k for k in input_y if k == 1]))
+        input_weights = [neg_count/pos_count if k == 1. else 1. for k in input_y]
+    else:
+        input_weights = [1.0] * len(input_y)
+
+    train_X, train_y, test_X, test_y = split_data(0.8, input_X, input_y)
+    print(train_X.shape)
+    print(train_y.shape)
+
+    survey_config = SurveyEnvConfig()
+    train_env = SurveyEnv(train_X, train_y, feature_names, survey_config)
+    test_env = SurveyEnv(test_X, test_y, feature_names, survey_config)
+    x, y, pred, cost, optimizer, init = build(config, input_X.shape)
+    run(train_env, test_env, x, y, pred, cost, optimizer, init, config=config, overfit=args.overfit)

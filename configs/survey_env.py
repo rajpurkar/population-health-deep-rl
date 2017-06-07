@@ -50,7 +50,7 @@ class config():
 
 class RewardConfig():
     #Predict Reward
-    correctAnswerReward = 100.
+    correctAnswerReward = 10.
     wrongAnswerReward   = -1.
 
     def __init__(self, feature_names):
