@@ -156,7 +156,7 @@ if __name__ == '__main__':
                                                                'training data')
     args = parser.parse_args()
 
-    config = Config(epochs=1)
+    config = Config()
     if args.overfit:
         config.reg = 0
         config.epochs = 250
