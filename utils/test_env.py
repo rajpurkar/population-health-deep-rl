@@ -72,7 +72,11 @@ class EnvTest(object):
             else:
                 reward = self.config.wrongAnswerReward
         else:
-            reward = self.config.queryReward # todo: add variable query reward
+            if (self.config.queryRewardMap and
+                    action in self.config.queryRewardMap):
+                reward = self.config.queryRewardMap[action]
+            else:
+                reward = self.config.queryReward
             self.cur_state[action] = self.real_state[action]
         return self.cur_state, reward, done
 

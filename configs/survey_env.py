@@ -14,6 +14,8 @@ class config():
     correctAnswerReward = 10.
     wrongAnswerReward   = -1.
     queryReward         = -2.
+    queryRewardMap      = { 'Region': 0.0,
+                            'Malaria endemicity': 0.0}
 
     #exploration
     no_repeats          = False
