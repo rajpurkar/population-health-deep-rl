@@ -42,6 +42,14 @@ class Dataset(object):
         else:
             return self._sample(self.X_test, self.y_test)
 
+    def col_to_name(self, col_int):
+        return self.feature_names[col_int]
+
+    def name_to_col(self, name):
+        return self.feature_names.index(name)
+
+    def col_value_to_interpretation(self, col_int, value):
+        raise NotImplementedError
 
     def process_X(self, df, cols):
         X = df.loc[:, cols]
