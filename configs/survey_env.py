@@ -5,6 +5,15 @@ class config():
     max_steps           = 5
     num_classes         = 2
 
+    # reward
+    """
+    reward_dict         = { 'Region': 0.0,
+                            'Malaria endemicity': 0.0}
+    """
+
+    correctAnswerReward = 10.
+    wrongAnswerReward   = -1.
+
     #exploration
     no_repeats          = False
     no_sample_repeats   = False
@@ -47,20 +56,3 @@ class config():
     eps_end            = 0.001
     eps_nsteps         = nsteps_train/2
     learning_start     = 500
-
-class RewardConfig():
-    #Predict Reward
-    correctAnswerReward = 10.
-    wrongAnswerReward   = -1.
-
-    def __init__(self, feature_names):
-        self.reward_dict = {}
-        for name in feature_names:
-            self.reward_dict[name] = -2.
-        self.reward_dict['Region'] = 0
-        self.reward_dict['Malaria endemicity'] = 0
-
-
-    def get_reward(self, action):
-        assert(action in self.reward_dict)
-        return self.reward_dict[action]

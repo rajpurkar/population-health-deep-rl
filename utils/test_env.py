@@ -2,6 +2,18 @@ from __future__ import print_function
 import random
 import numpy as np
 
+class SampleDataset(object):
+    def __init__(self, feature_length=None, first_n=None):
+        assert(first_n <= feature_length)
+        self.feature_length = feature_length
+        self.first_n = first_n
+        
+    def sample(self, split):
+        assert(split in ['train', 'test'])
+        x = [random.choice([0, 1]) for _ in range(self.feature_length)]
+        y = sum(x[:self.first_n])
+        return np.array(x), y
+
 
 def sample_generate(feature_length=None, first_n=None):
     assert(first_n <= feature_length)
@@ -25,39 +37,25 @@ class ObservationSpace(object):
         self.shape = shape
 
 class EnvTest(object):
-    """
-    Adapted from Igor Gitman, CMU / Karan Goel
-    """
-    def __init__(self, config):
+    def __init__(self, config, sampler):
         self.max_steps = config.max_steps
         self.num_classes = config.num_classes
         self.config = config
         self.feature_length = config.state_shape[0]
+        self.sampler = sampler
 
         assert(self.config.max_steps <= self.feature_length)
 
         self.action_space = ActionSpace(self.feature_length + self.num_classes) # extra quit actions
         self.observation_space = ObservationSpace(self.config.state_shape)
-
         self.reset()
 
-    def reset(self):
-        self.real_state, self.y = sample_generate(
-            self.feature_length, self.config.neccessary_queries)
+    def reset(self, split='train'):
+        self.real_state, self.y = self.sampler.sample(split)
         self.num_iters = 0
         self.cur_state = np.ones((self.feature_length, 1, 1)) * -1
         self.action_space.rem_actions = range(self.action_space.n)
         return self.cur_state
-
-    def set_reward(self, done, action):
-        if done is True:
-            if self.y == int(action - self.feature_length):
-                self.reward = self.config.correctAnswerReward
-            else:
-                self.reward = self.config.wrongAnswerReward
-        else:
-            self.reward = self.config.queryReward
-            self.cur_state[action] = self.real_state[action]
 
     def step(self, action):
         assert(action < self.feature_length + self.num_classes)
@@ -68,13 +66,21 @@ class EnvTest(object):
                 self.action_space.rem_actions.remove(action)
 
         done = (self.num_iters > self.max_steps) or (int(action) >= self.feature_length)
-        self.set_reward(done, action)
-        return self.cur_state, self.reward, done
+        if done is True:
+            if self.y == int(action - self.feature_length):
+                reward = self.config.correctAnswerReward
+            else:
+                reward = self.config.wrongAnswerReward
+        else:
+            reward = self.config.queryReward # todo: add variable query reward
+            self.cur_state[action] = self.real_state[action]
+        return self.cur_state, reward, done
 
     def render(self):
         print(self.cur_state)
 
 if __name__ == '__main__':
+    sampler = SampleDataset(feature_length=5, first_n=2)
     for i in range(20):
-        sample = sample_generate(feature_length=5, first_n=2)
+        sample = sampler.sample('train')
         print(sample)

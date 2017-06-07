@@ -35,12 +35,12 @@ class Dataset(object):
         return X[index, :], y[index]
 
 
-    def sample_train(self):
-        return self._sample(self.X_train, self.y_train)
-
-
-    def sample_test(self):
-        return self._sample(self.X_test, self.y_test)
+    def sample(self, split='train'):
+        assert(split in ['train', 'test'])
+        if split == 'train':
+            return self._sample(self.X_train, self.y_train)
+        else:
+            return self._sample(self.X_test, self.y_test)
 
 
     def process_X(self, df, cols):
@@ -68,5 +68,6 @@ class Dataset(object):
 if __name__ == '__main__':
     import sys
     d = Dataset(sys.argv[1])
+    print(d.state_shape)
     for i in range(50):
-        print(d.sample_train()[1]) # should be ~equal 0 and 1
+        print(d.sample()[1]) # should be ~equal 0 and 1
