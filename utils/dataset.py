@@ -1,13 +1,8 @@
 from __future__ import print_function
 import pandas as pd
 import numpy as np
-import argparse
-import os
-import sklearn.metrics
-from sklearn.model_selection import cross_val_predict
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 from sklearn.model_selection import train_test_split
-import itertools
 
 
 class Dataset(object):
@@ -23,6 +18,7 @@ class Dataset(object):
         self.feature_names.remove(self.y_column_name)
         X = self.process_X(df, self.feature_names)
         y = self.process_Y(df, self.y_column_name)
+        self.state_shape = X[0].shape
 
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
             X, y, test_size=0.2, random_state=42)
