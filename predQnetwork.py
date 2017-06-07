@@ -100,9 +100,9 @@ class ActPredDQN(DQN):
         num_actions = self.env.action_space.n
         out = state
         with tf.variable_scope(scope, reuse):
-            out = layers.convolution2d(out, num_outputs=10, kernel_size=[1, 1], activation_fn=tf.nn.relu, stride=1)
+            out = layers.convolution2d(out, num_outputs=num_actions, kernel_size=[1, 1], activation_fn=tf.nn.relu, stride=1)
             out = layers.flatten(out)
-            out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
+            out = layers.fully_connected(out, num_actions, activation_fn=tf.nn.relu)
             out = layers.fully_connected(out, num_actions, activation_fn=None)
         return out
 

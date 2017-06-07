@@ -174,7 +174,7 @@ class DQN(QN):
         action_values = self.sess.run(self.q, feed_dict={self.s: [state]})[0]
 
         if force_pred is True:
-            best_actions = np.argsort(action_values)
+            best_actions = np.argsort(action_values)[::-1]
             for best in best_actions:
                 if best >= self.env.action_space.n - self.config.num_classes:
                     return best, action_values

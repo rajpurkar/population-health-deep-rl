@@ -53,17 +53,26 @@ class EnvLogger(object):
     def clear(self):
         self.steps = []
 
-    def add_step(self, action):
-        self.steps.append(action)
+    def add_step(self, action, reward, one_hot_value):
+        self.steps.append((action, reward, one_hot_value))
 
     def render_path(self):
         path = []
-        for step in self.steps:
-            if step < len(self.sampler.feature_names):
-                path.append(self.sampler.col_to_name(step))
+        for (action, reward, one_hot_value) in self.steps:
+            if one_hot_value is not None:
+                value = np.argmax(one_hot_value)
+                value = self.sampler.col_value_to_interpretation(action, value)
             else:
-                path.append("Predict " + str(step - len(self.sampler.feature_names)))
+                value = None
+            if action < len(self.sampler.feature_names):
+                action = self.sampler.col_to_name(action)
+            else:
+                pred = str(action - len(self.sampler.feature_names))
+                action = "Predict " + pred
+            path.append((action, reward, value))
+        pp.pprint('-------------')
         pp.pprint(path)
+        pp.pprint('-------------')
 
 
 class EnvTest(object):
@@ -86,14 +95,14 @@ class EnvTest(object):
         self.mode = split
         self.real_state, self.y = self.sampler.sample(self.mode)
         self.num_iters = 0
-        self.cur_state = np.ones_like(self.real_state) * -1
+        self.cur_state = np.zeros_like(self.real_state)
         self.action_space.rem_actions = range(self.action_space.n)
         return self.cur_state
 
     def step(self, action):
         assert(self.mode is not None)
         assert(action < self.feature_length + self.num_classes)
-        self.logger.add_step(action)
+
         self.num_iters += 1
 
         if self.config.no_repeats is True or self.config.no_sample_repeats is True:
@@ -106,6 +115,7 @@ class EnvTest(object):
                 reward = self.config.correctAnswerReward
             else:
                 reward = self.config.wrongAnswerReward
+            self.logger.add_step(action, reward, None)
             if self.mode == 'test':
                 self.logger.render_path()
         else:
@@ -114,7 +124,9 @@ class EnvTest(object):
                 reward = self.config.queryRewardMap[action]
             else:
                 reward = self.config.queryReward
-            self.cur_state[action] = self.real_state[action]
+            self.cur_state[action, :, :] = self.real_state[action, :, :]
+            self.logger.add_step(action, reward, self.real_state[action, :, :])
+
         return self.cur_state, reward, done
 
     def render(self):
