@@ -1,6 +1,8 @@
 from __future__ import print_function
 import random
 import numpy as np
+from pprint import PrettyPrinter
+pp = PrettyPrinter(depth=6)
 
 class SampleDataset(object):
     def __init__(self, feature_length=None, first_n=None):
@@ -21,6 +23,7 @@ def sample_generate(feature_length=None, first_n=None):
     y = sum(x[:first_n])
     return np.array(x), y
 
+
 class ActionSpace(object):
     def __init__(self, feature_length, num_classes):
         self.feature_length = feature_length
@@ -36,12 +39,36 @@ class ActionSpace(object):
         else:
             return np.random.randint(0, self.n)
 
+
 class ObservationSpace(object):
     def __init__(self, shape):
         self.shape = shape
 
+
+class EnvLogger(object):
+    def __init__(self, sampler):
+        self.steps = None
+        self.sampler = sampler
+
+    def clear(self):
+        self.steps = []
+
+    def add_step(self, action):
+        self.steps.append(action)
+
+    def render_path(self):
+        path = []
+        for step in self.steps:
+            if step < len(self.sampler.feature_names):
+                path.append(self.sampler.col_to_name(step))
+            else:
+                path.append("Predict " + str(step - len(self.sampler.feature_names)))
+        pp.pprint(path)
+
+
 class EnvTest(object):
     def __init__(self, config, sampler):
+        self.logger = EnvLogger(sampler)
         self.max_steps = config.max_steps
         self.num_classes = config.num_classes
         self.config = config
@@ -52,17 +79,21 @@ class EnvTest(object):
 
         self.action_space = ActionSpace(self.feature_length, self.num_classes) # extra quit actions
         self.observation_space = ObservationSpace(self.config.state_shape)
-        self.reset()
 
-    def reset(self, split='train'):
-        self.real_state, self.y = self.sampler.sample(split)
+    def reset(self, split):
+        assert(split in ['train', 'test'])
+        self.logger.clear()
+        self.mode = split
+        self.real_state, self.y = self.sampler.sample(self.mode)
         self.num_iters = 0
         self.cur_state = np.ones_like(self.real_state) * -1
         self.action_space.rem_actions = range(self.action_space.n)
         return self.cur_state
 
     def step(self, action):
+        assert(self.mode is not None)
         assert(action < self.feature_length + self.num_classes)
+        self.logger.add_step(action)
         self.num_iters += 1
 
         if self.config.no_repeats is True or self.config.no_sample_repeats is True:
@@ -75,6 +106,8 @@ class EnvTest(object):
                 reward = self.config.correctAnswerReward
             else:
                 reward = self.config.wrongAnswerReward
+            if self.mode == 'test':
+                self.logger.render_path()
         else:
             if (self.config.queryRewardMap and
                     action in self.config.queryRewardMap):
@@ -86,6 +119,7 @@ class EnvTest(object):
 
     def render(self):
         print(self.cur_state)
+
 
 if __name__ == '__main__':
     sampler = SampleDataset(feature_length=5, first_n=2)

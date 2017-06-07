@@ -2,7 +2,6 @@ from __future__ import print_function
 from dbfread import DBF
 import pandas as pd
 import csv
-from pandas import DataFrame
 import argparse
 import process
 import postprocess
@@ -10,7 +9,7 @@ from tqdm import tqdm
 
 def geo_read(dbf_file):
     dbf = DBF(dbf_file)
-    frame = DataFrame(iter(dbf))
+    frame = pd.DataFrame(iter(dbf))
     return frame
   
 
@@ -45,7 +44,7 @@ def combine_geo(dbf, data_folder):
     endemicity_field = 'Malaria endemicity'
 
     geo_df = geo_read(dbf)
-    geo_df = geo_df.rename(columns = {'DHSCLUST': cluster_field})
+    geo_df = geo_df.rename(columns={'DHSCLUST': cluster_field})
     geo_df[cluster_field] = geo_df[cluster_field].astype(int)
 
     survey_df = survey_read(data_folder, [
@@ -56,7 +55,7 @@ def combine_geo(dbf, data_folder):
     survey_df[cluster_field] = survey_df[cluster_field].astype(int)
 
     merged = survey_df.merge(geo_df, how='left', on=cluster_field)
-    merged = merged.rename(columns = {
+    merged = merged.rename(columns={
         'URBAN_RURA': 'URBAN_RURAL',
         output_field: 'MALARIA',
         endemicity_field: 'ENDEMICITY'
@@ -71,8 +70,8 @@ def combine_geo(dbf, data_folder):
     ]
 
     merged.to_csv(data_folder + '/combine_geo.csv',
-        columns = cols_to_keep,
-        mode = 'w',
+        columns=cols_to_keep,
+        mode='w',
         index=False)
 
 
