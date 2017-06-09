@@ -36,7 +36,8 @@ def post_process(file, must_have_field=None, verbose=False):
         "Relationship structure",
         "campaign",
         " old ",
-        "index"
+        "index",
+        "endemicity"
     ]
 
     selected = []

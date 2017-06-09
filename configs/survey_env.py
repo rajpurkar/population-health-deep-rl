@@ -8,8 +8,7 @@ class config():
     correctAnswerReward = 5.
     wrongAnswerReward   = -5.
     queryReward         = -0.1
-    queryRewardMap      = { 'Region': -0.01,
-                            'Malaria endemicity': -0.01}
+    queryRewardMap      = { 'Region': -0.01 }
 
     #exploration
     no_repeats          = False
@@ -31,7 +30,7 @@ class config():
     plot_output  = output_path + "scores.png"
 
     # model and training config
-    num_episodes_test = 100
+    num_episodes_test = 200
     grad_clip         = True
     clip_val          = 10
     saving_freq       = 50000

@@ -103,6 +103,7 @@ class ActPredDQN(DQN):
             out = layers.convolution2d(out, num_outputs=num_actions, kernel_size=[1, 1], activation_fn=tf.nn.relu, stride=1)
             out = layers.flatten(out)
             out = layers.fully_connected(out, num_actions, activation_fn=tf.nn.relu)
+            out = layers.fully_connected(out, num_actions, activation_fn=tf.nn.relu)
             out = layers.fully_connected(out, num_actions, activation_fn=None)
         return out
 
