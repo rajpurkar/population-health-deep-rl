@@ -8,7 +8,7 @@ from utils.dataset import Dataset
 
 
 class Config():
-    def __init__(self, epochs=10, batch_size=100, n_classes=2,
+    def __init__(self, epochs=100, batch_size=128, n_classes=2,
                  learning_rate=5e-4, reg=1e-1, display_step=1, eval_step=1,
                  weighted_loss=False, num_train_examples=1000, num_test_examples=2000):
         self.epochs = epochs
