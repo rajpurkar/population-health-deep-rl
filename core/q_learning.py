@@ -320,6 +320,7 @@ class QN(object):
                         outputs.append(1)
                     else:
                         outputs.append(0)
+                    break
 
             # updates to perform at the end of an episode
             rewards.append(total_reward)
