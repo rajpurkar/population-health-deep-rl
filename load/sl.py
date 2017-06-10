@@ -5,17 +5,16 @@ from predict import *
 from utils.survey_env import SurveyEnv
 from configs.survey_env import config as SurveyEnvConfig
 from utils.dataset import Dataset
+from utils.exploration import LinearSchedule
 
 
 class Config():
-    def __init__(self, epochs=100, batch_size=32, n_classes=2,
-                 learning_rate=5e-4, reg=1e-1, display_step=1, eval_step=1,
+    def __init__(self, epochs=100, batch_size=32, n_classes=2, reg=1e-1, display_step=1, eval_step=1,
                  weighted_loss=False, num_train_examples=1000, num_test_examples=2000,
-                 keep_prob=0.9):
+                 keep_prob=0.9, lr_begin=0.00025, lr_end=0.00005):
         self.epochs = epochs
         self.batch_size = batch_size
         self.n_classes = n_classes
-        self.learning_rate = learning_rate
         self.reg = reg
         self.display_step = display_step
         self.eval_step = eval_step
@@ -23,6 +22,8 @@ class Config():
         self.num_train_examples = num_train_examples
         self.num_test_examples = num_test_examples
         self.keep_prob = keep_prob
+        self.lr_begin = lr_begin
+        self.lr_end = lr_end
 
 
 def get_fake_dataset(batch_size, width, height, depth, n_classes=2):
@@ -53,7 +54,8 @@ def add_placeholder(width, height, depth):
     x = tf.placeholder("float", [None, width, height, depth], name="x")
     y = tf.placeholder("int64", [None, ], name="y",)
     train_placeholder = tf.placeholder(dtype=tf.bool, name="istraining")
-    return x, y, train_placeholder
+    lr_placeholder = tf.placeholder(tf.float32)
+    return x, y, train_placeholder, lr_placeholder
 
 
 def build(config, input_dim):
@@ -62,7 +64,7 @@ def build(config, input_dim):
     depth = input_dim[2]
 
     #get placeholders:
-    x, y, train_placeholder = add_placeholder(width, height, depth)
+    x, y, train_placeholder, lr_placeholder = add_placeholder(width, height, depth)
 
     # Construct model
     pred = cnn_network(config, x, train_placeholder)
@@ -74,11 +76,11 @@ def build(config, input_dim):
         l2_loss += tf.nn.l2_loss(var)
     cost += config.reg * l2_loss
 
-    optimizer = tf.train.AdamOptimizer(learning_rate=config.learning_rate).minimize(cost)
+    optimizer = tf.train.AdamOptimizer(learning_rate=lr_placeholder).minimize(cost)
 
     # Initializing the variables
     init = tf.global_variables_initializer()
-    return x, y, train_placeholder, pred, cost, optimizer, init
+    return x, y, train_placeholder, lr_placeholder, pred, cost, optimizer, init
 
 
 def get_state(env, split='train'):
@@ -118,7 +120,7 @@ def get_batch(env, split='train', batch_size=32):
     return np.asarray(batch_X), np.asarray(batch_reward), np.asarray(batch_y)
 
 
-def run_epoch(env, x, y, is_training, pred, cost, optimizer, sess, num_examples, split='train'):
+def run_epoch(epoch_num, env, x, y, is_training, pred, lr_placeholder, lr_schedule, cost, optimizer, sess, num_examples, split='train'):
     avg_cost = 0.
     avg_reward = 0.
     # Loop over all batches
@@ -148,7 +150,13 @@ def run_epoch(env, x, y, is_training, pred, cost, optimizer, sess, num_examples,
 
         all_preds.extend([1 if batch_y[i] == predictions[i] else 0 for i in xrange(predictions.shape[0])])
         if split == 'train':
-            _, c = sess.run([optimizer, cost], feed_dict={x: batch_X, y: batch_y, is_training: training})
+            t = epoch_num * num_batches + i
+            lr_schedule.update(t)
+            # print("Epoch {:d} batch {:d} t={:d} Learning rate: {:.7f}".format(epoch_num, i, t, lr_schedule.epsilon))
+            _, c = sess.run([optimizer, cost], feed_dict={x: batch_X,
+                                                          y: batch_y,
+                                                          is_training: training,
+                                                          lr_placeholder: lr_schedule.epsilon})
             avg_cost += np.sum(c)
 
         # Compute average loss
@@ -166,10 +174,12 @@ def run_epoch(env, x, y, is_training, pred, cost, optimizer, sess, num_examples,
     return avg_cost, avg_reward, acc, std
 
 
-def run(env, x, y, train_placeholder, pred, cost, optimizer, init, output_file, config=None):
+def run(env, x, y, train_placeholder, lr_placeholder, pred, cost, optimizer, init, output_file, config=None):
     if config is None:
         config = Config()
 
+    total_steps = config.epochs * config.num_train_examples / config.batch_size
+    lr_schedule = LinearSchedule(config.lr_begin, config.lr_end, total_steps)
     # Launch the graph
     with tf.Session() as sess:
         sess.run(init)
@@ -177,8 +187,10 @@ def run(env, x, y, train_placeholder, pred, cost, optimizer, init, output_file, 
         # Training cycle
         for epoch in range(config.epochs):
 
-            avg_train_cost, avg_train_reward, train_acc, train_std = run_epoch(env, x, y, train_placeholder, pred, cost, optimizer,
-                                                         sess, config.num_train_examples)
+            avg_train_cost, avg_train_reward, train_acc, train_std = run_epoch(epoch, env, x, y, train_placeholder, pred,
+                                                                               lr_placeholder, lr_schedule,
+                                                                               cost, optimizer,
+                                                                               sess, config.num_train_examples)
             # Display logs per epoch step
             if (epoch+1) % config.display_step == 0:
                 print("Epoch:", '%04d' % (epoch+1), "cost={:.9f}".format(avg_train_cost))
@@ -191,8 +203,10 @@ def run(env, x, y, train_placeholder, pred, cost, optimizer, init, output_file, 
 
             if (epoch+1) % config.eval_step == 0:
                 # Test model
-                _, avg_test_reward, test_acc, test_std = run_epoch(env, x, y, train_placeholder, pred, cost, optimizer, sess,
-                                                           config.num_test_examples, split='test')
+                _, avg_test_reward, test_acc, test_std = run_epoch(epoch, env, x, y, train_placeholder, pred,
+                                                                   lr_placeholder, lr_schedule,
+                                                                   cost, optimizer, sess,
+                                                                   config.num_test_examples, split='test')
                 print("Average test reward: {:.4f}".format(avg_test_reward))
                 print("Test accuracy: {:.4f}\tStd: {:.4f}".format(test_acc, test_std))
                 output_file.write("Average test reward: {:.4f}\n".format(avg_test_reward))
@@ -226,8 +240,8 @@ if __name__ == '__main__':
     survey_config = SurveyEnvConfig()
     survey_config.max_steps = args.max_steps
     env = SurveyEnv(survey_config, sampler, log_file=path_log_file)
-    x, y, train_placeholder, pred, cost, optimizer, init = build(config, sampler.state_shape)
-    run(env, x, y, train_placeholder, pred, cost, optimizer, init, results_file, config=config)
+    x, y, train_placeholder, lr, pred, cost, optimizer, init = build(config, sampler.state_shape)
+    run(env, x, y, train_placeholder, lr, pred, cost, optimizer, init, results_file, config=config)
 
     results_file.close()
     path_log_file.close()
