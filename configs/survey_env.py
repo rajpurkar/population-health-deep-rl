@@ -5,10 +5,10 @@ class config():
     max_steps           = 4
     num_classes         = 2
 
-    correctAnswerReward = 5.
-    wrongAnswerReward   = -5.
-    queryReward         = -0.1
-    queryRewardMap      = { 'Region': -0.01 }
+    correctAnswerReward = 10.
+    wrongAnswerReward   = -10.
+    queryReward         = -1
+    queryRewardMap      = {} # 'Region': -0.01 }
 
     #exploration
     no_repeats          = False
@@ -24,7 +24,7 @@ class config():
     high             = 1.
 
     # output config
-    output_path  = "results/survey_env_test/" + "lower_overall_rewards" + '/'
+    output_path  = "results/survey_env_test/" + str(int(time.time())) + '/'
     model_output = output_path + "model.weights/"
     log_path     = output_path + "log.txt"
     plot_output  = output_path + "scores.png"
@@ -41,7 +41,7 @@ class config():
     # nature paper hyper params
     nsteps_train       = 100000#0
     batch_size         = 32
-    buffer_size        = 10000
+    buffer_size        = 5000
     target_update_freq = 1000
     gamma              = 1.0
     learning_freq      = 1
