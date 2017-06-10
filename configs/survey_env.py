@@ -5,11 +5,11 @@ class config():
     max_steps           = 5
     num_classes         = 2
 
-    correctAnswerReward = 10.
-    wrongAnswerReward   = -1.
-    queryReward         = -2.
-    queryRewardMap      = { 'Region': -2.0,
-                            'Malaria endemicity': -2.0}
+    correctAnswerReward = 15.
+    wrongAnswerReward   = -2.
+    queryReward         = -1.
+    queryRewardMap      = { 'Region': -3.0,
+                            'Malaria endemicity': -3.0}
 
     #exploration
     no_repeats          = False
@@ -24,13 +24,13 @@ class config():
     high             = 1.
 
     # output config
-    output_path  = "results/survey_env_test/" + str(int(time.time())) + '/'
+    output_path  = "results/survey_env_test/" + "lower_overall_rewards" + '/'
     model_output = output_path + "model.weights/"
     log_path     = output_path + "log.txt"
     plot_output  = output_path + "scores.png"
 
     # model and training config
-    num_episodes_test = 100
+    num_episodes_test = 200
     grad_clip         = True
     clip_val          = 10
     saving_freq       = 50000

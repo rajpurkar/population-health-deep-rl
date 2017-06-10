@@ -1,3 +1,4 @@
+import os
 import tensorflow as tf
 import numpy as np
 import tensorflow.contrib.layers as layers
@@ -112,8 +113,16 @@ Use deep Q network for test environment.
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('file', help='File to predict')
+    parser.add_argument('--stats-dir', default='stats', help='Directory to write stats to')
+    parser.add_argument('--run-id', type=str, default='rl', help='Run ID for current run')
     args = parser.parse_args()
+
     sampler = Dataset(args.file)
-    env = SurveyEnv(config, sampler)
-    model = ActPredDQN(env, config)
+
+    if not os.path.exists(args.stats_dir):
+        os.makedirs(args.stats_dir)
+    log_file = open(os.path.join(args.stats_dir, args.run_id + "_paths.txt"), 'w')
+    results_file = open(os.path.join(args.stats_dir, args.run_id + "_results.txt"), 'w')
+    env = SurveyEnv(config, sampler, log_file=log_file)
+    model = ActPredDQN(env, config, results_file=results_file)
     model.run()

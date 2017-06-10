@@ -10,7 +10,7 @@ from utils.dataset import Dataset
 class Config():
     def __init__(self, epochs=50, batch_size=100, n_classes=2,
                  learning_rate=5e-4, reg=1e-1, display_step=1, eval_step=1,
-                 weighted_loss=False, num_train_examples=6000, num_test_examples=100):
+                 weighted_loss=False, num_train_examples=200, num_test_examples=200):
         self.epochs = epochs
         self.batch_size = batch_size
         self.n_classes = n_classes
@@ -92,6 +92,7 @@ def get_prediction_reward(env, prediction):
 def run_epoch(env, x, y, pred, cost, optimizer, sess, num_examples, split='train'):
     avg_cost = 0.
     avg_reward = 0.
+    all_preds = []
     # Loop over all batches
 
     for i in range(num_examples):
@@ -105,8 +106,10 @@ def run_epoch(env, x, y, pred, cost, optimizer, sess, num_examples, split='train
         pred_reward = get_prediction_reward(env, output)
         if pred_reward == env.config.correctAnswerReward:
             example_y = output
+            all_preds.append(1)
         else:
             example_y = 1 - output
+            all_preds.append(0)
 
         if split == 'train':
             _, c = sess.run([optimizer, cost], feed_dict={x: example_X, y: example_y})
@@ -120,10 +123,13 @@ def run_epoch(env, x, y, pred, cost, optimizer, sess, num_examples, split='train
 
     avg_reward /= num_examples
 
-    return avg_cost, avg_reward
+    acc = np.mean(all_preds)
+    std = np.std(all_preds)
+
+    return avg_cost, avg_reward, acc, std
 
 
-def run(env, x, y, pred, cost, optimizer, init, config=None, overfit=True):
+def run(env, x, y, pred, cost, optimizer, init, output_file, config=None):
     if config is None:
         config = Config()
 
@@ -134,18 +140,30 @@ def run(env, x, y, pred, cost, optimizer, init, config=None, overfit=True):
         # Training cycle
         for epoch in range(config.epochs):
 
-            avg_train_cost, avg_train_reward = run_epoch(env, x, y, pred, cost, optimizer,
+            avg_train_cost, avg_train_reward, train_acc, train_std = run_epoch(env, x, y, pred, cost, optimizer,
                                                          sess, config.num_train_examples)
             # Display logs per epoch step
             if (epoch+1) % config.display_step == 0:
                 print("Epoch:", '%04d' % (epoch+1), "cost={:.9f}".format(avg_train_cost))
-                print("Average train reward: {:.2f} ".format(avg_train_reward))
+                print("Average train reward: {:4f} ".format(avg_train_reward))
+                print("Train accuracy: {:.4f}\tStd: {:.4f}".format(train_acc, train_std))
+
+                output_file.write("Epoch: {:04d}\ttraining cost={:.9f}\n".format(epoch+1, avg_train_cost))
+                output_file.write("Average train reward: {:.4f}\n".format(avg_train_reward))
+                output_file.write("Train accuracy: {:.4f}\tStd: {:.4f}\n".format(train_acc, train_std))
 
             if (epoch+1) % config.eval_step == 0:
                 # Test model
-                _, avg_test_reward = run_epoch(env, x, y, pred, cost, optimizer, sess,
+                _, avg_test_reward, test_acc, test_std = run_epoch(env, x, y, pred, cost, optimizer, sess,
                                                            config.num_test_examples, split='test')
-                print("Average test reward: {:.2f}".format(avg_test_reward))
+                print("Average test reward: {:.4f}".format(avg_test_reward))
+                print("Test accuracy: {:.4f}\tStd: {:.4f}".format(test_acc, test_std))
+                output_file.write("Average test reward: {:.4f}\n".format(avg_test_reward))
+                output_file.write("Test accuracy: {:.4f}\tStd: {:.4f}\n".format(test_acc, test_std))
+
+            print("-----------------------")
+            output_file.write("-----------------------")
+            output_file.flush()
 
         print("Optimization Finished!")
 
@@ -154,18 +172,25 @@ if __name__ == '__main__':
     parser.add_argument('file', help='File to predict')
     parser.add_argument('--overfit', action='store_true', help='If specified, tries to overfit to a single batch of '
                                                                'training data')
+    parser.add_argument('--stats-dir', type=str, default='stats/')
+    parser.add_argument('--run-id', type=str, default='sl')
     args = parser.parse_args()
 
+    if not os.path.exists(args.stats_dir):
+        os.makedirs(args.stats_dir)
+
+    results_file = os.path.join(args.stats_dir, args.run_id + "_results.txt")
+    results_file = open(results_file, 'w')
+    path_log_file = os.path.join(args.stats_dir, args.run_id + "_paths.txt")
+    path_log_file = open(path_log_file, 'w')
     config = Config()
-    if args.overfit:
-        config.reg = 0
-        config.epochs = 250
-        config.eval_step = 10000  # don't display stats on test set if overfitting
 
     # input_weights = [k+1 for k in input_y]
     sampler = Dataset(args.file)
     survey_config = SurveyEnvConfig()
-    env = SurveyEnv(survey_config, sampler)
+    env = SurveyEnv(survey_config, sampler, log_file=path_log_file)
     x, y, pred, cost, optimizer, init = build(config, sampler.state_shape)
-    print(sampler.state_shape)
-    run(env, x, y, pred, cost, optimizer, init, config=config, overfit=args.overfit)
+    run(env, x, y, pred, cost, optimizer, init, results_file, config=config)
+
+    results_file.close()
+    path_log_file.close()

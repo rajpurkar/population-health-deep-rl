@@ -2,6 +2,8 @@ from __future__ import print_function
 import random
 import numpy as np
 from pprint import PrettyPrinter
+import sys
+
 pp = PrettyPrinter(depth=6)
 
 class SampleDataset(object):
@@ -42,9 +44,10 @@ class ObservationSpace(object):
 
 
 class EnvLogger(object):
-    def __init__(self, sampler):
+    def __init__(self, sampler, log_file=sys.stdout):
         self.steps = None
         self.sampler = sampler
+        self.log_file = log_file
 
     def clear(self):
         self.steps = []
@@ -59,12 +62,12 @@ class EnvLogger(object):
                 path.append(self.sampler.col_to_name(step))
             else:
                 path.append("Predict " + str(step - len(self.sampler.feature_names)))
-        pp.pprint(path)
+        self.log_file.write(pp.pformat(path)+"\n")
 
 
 class EnvTest(object):
-    def __init__(self, config, sampler):
-        self.logger = EnvLogger(sampler)
+    def __init__(self, config, sampler, log_file=sys.stdout):
+        self.logger = EnvLogger(sampler, log_file)
         self.max_steps = config.max_steps
         self.num_classes = config.num_classes
         self.config = config

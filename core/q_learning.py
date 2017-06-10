@@ -15,7 +15,7 @@ class QN(object):
     """
     Abstract Class for implementing a Q Network
     """
-    def __init__(self, env, config, logger=None):
+    def __init__(self, env, config, results_file=None, logger=None):
         """
         Initialize Q Network and env
 
@@ -29,6 +29,7 @@ class QN(object):
 
         # store hyper params
         self.config = config
+        self.results_file = results_file
         self.logger = logger
         if logger is None:
             self.logger = get_logger(config.log_path)
@@ -156,7 +157,8 @@ class QN(object):
 
         t = last_eval = last_record = 0 # time control of nb of steps
         scores_eval = [] # list of scores computed at iteration time
-        scores_eval += [self.evaluate('test')]
+        score, acc, std = self.evaluate('test')
+        scores_eval += [score]
 
         prog = Progbar(target=self.config.nsteps_train)
 
@@ -219,7 +221,8 @@ class QN(object):
                 # evaluate our policy
                 last_eval = 0
                 print("")
-                scores_eval += [self.evaluate('test')]
+                score, acc, std = self.evaluate('test')
+                scores_eval += [score]
 
             if (t > self.config.learning_start) and self.config.record and (last_record > self.config.record_freq):
                 self.logger.info("Recording...")
@@ -229,7 +232,8 @@ class QN(object):
         # last words
         self.logger.info("- Training done.")
         self.save()
-        scores_eval += [self.evaluate('test')]
+        score, acc, std = self.evaluate('test')
+        scores_eval += [score]
         export_plot(scores_eval, "Scores", self.config.plot_output)
 
 
@@ -275,6 +279,7 @@ class QN(object):
         replay_buffer = ReplayBuffer(self.config.buffer_size, self.config.state_history)
         rewards = []
 
+        outputs = []
         for i in range(num_episodes):
             total_reward = 0
             state = self.env.reset(split)
@@ -296,19 +301,28 @@ class QN(object):
                 # count reward
                 total_reward += reward
                 if done:
-                    break
+                    if reward == self.env.config.correctAnswerReward:
+                        outputs.append(1)
+                    else:
+                        outputs.append(0)
 
             # updates to perform at the end of an episode
             rewards.append(total_reward)
 
         avg_reward = np.mean(rewards)
         sigma_reward = np.sqrt(np.var(rewards) / len(rewards))
-
+        accuracy = np.mean(outputs)
+        std = np.std(outputs)
         if num_episodes > 1:
-            msg = "Average reward: {:04.2f} +/- {:04.2f}".format(avg_reward, sigma_reward)
+            msg = "Average reward: {:04.2f} +/- {:04.2f}\tAccuracy: {:04.2f}\tStd: {:04.2f}".format(avg_reward,
+                                                                                                    sigma_reward,
+                                                                                                    accuracy,
+                                                                                                    std)
+            self.results_file.write(msg+"\n")
+            self.results_file.flush()
             self.logger.info(msg)
 
-        return avg_reward
+        return avg_reward, accuracy, std
 
 
     def run(self):
