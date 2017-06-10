@@ -8,10 +8,10 @@ from utils.dataset import Dataset
 
 
 class Config():
-    def __init__(self, epochs=100, batch_size=128, n_classes=2,
+    def __init__(self, epochs=100, batch_size=32, n_classes=2,
                  learning_rate=5e-4, reg=1e-1, display_step=1, eval_step=1,
                  weighted_loss=False, num_train_examples=1000, num_test_examples=2000,
-                 dropout=0.8):
+                 keep_prob=0.9):
         self.epochs = epochs
         self.batch_size = batch_size
         self.n_classes = n_classes
@@ -22,7 +22,7 @@ class Config():
         self.weighted_loss = weighted_loss
         self.num_train_examples = num_train_examples
         self.num_test_examples = num_test_examples
-        self.dropout = dropout
+        self.keep_prob = keep_prob
 
 
 def get_fake_dataset(batch_size, width, height, depth, n_classes=2):
@@ -34,16 +34,16 @@ def get_fake_dataset(batch_size, width, height, depth, n_classes=2):
 
 def cnn_network(config, x, train_placeholder):
     out = x
-    out = layers.convolution2d(out, num_outputs=3, kernel_size=[1, 1], stride=1, activation_fn=None)
-    out = layers.batch_norm(out, is_training=train_placeholder, updates_collections=None)
-    out = tf.nn.relu(out)
-    out = layers.dropout(out, keep_prob=config.dropout, is_training=train_placeholder)
+    # out = layers.convolution2d(out, num_outputs=survey_config.max_steps, kernel_size=[1, 1], stride=1,
+    #                            activation_fn=None)
+    # out = layers.batch_norm(out, is_training=train_placeholder, updates_collections=None)
+    # out = tf.nn.relu(out)
+    # out = layers.dropout(out, keep_prob=config.dropout, is_training=train_placeholder)
     out = layers.flatten(out)
-    out = layers.fully_connected(out, 10, activation_fn=None)
-    # with tf.variable_scope("sl", reuse=True):
-    out = layers.batch_norm(out, is_training=train_placeholder, updates_collections=None)
-    out = tf.nn.relu(out)
-    out = layers.dropout(out, keep_prob=config.dropout, is_training=train_placeholder)
+    for i in xrange(0, 4):
+        out = layers.fully_connected(out, survey_config.max_steps, activation_fn=None)
+        out = tf.nn.relu(out)
+        # out = layers.dropout(out, keep_prob=config.keep_prob, is_training=train_placeholder)
     out = layers.fully_connected(out, config.n_classes, activation_fn=None)
     return out
 
