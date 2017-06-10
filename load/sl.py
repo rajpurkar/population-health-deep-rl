@@ -32,7 +32,7 @@ def get_fake_dataset(batch_size, width, height, depth, n_classes=2):
 
 def cnn_network(config, x):
     out = x
-    out = layers.convolution2d(out, num_outputs=10, kernel_size=[1, 1], activation_fn=tf.nn.relu, stride=1)
+    out = layers.convolution2d(out, num_outputs=3, kernel_size=[1, 1], activation_fn=tf.nn.relu, stride=1)
     out = layers.flatten(out)
     out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
     out = layers.fully_connected(out, config.n_classes, activation_fn=None)

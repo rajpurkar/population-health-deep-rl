@@ -74,9 +74,9 @@ class EnvLogger(object):
                 pred = str(action - len(self.sampler.feature_names))
                 action = "Predict " + pred
             path.append((action, reward, value))
-        self.log_file.write(pp.pformat('-------------\n'))
+        self.log_file.write(pp.pformat('-------------')+"\n")
         self.log_file.write(pp.pformat(path)+"\n")
-        self.log_file.write(pp.pformat('-------------\n'))
+        self.log_file.write(pp.pformat('-------------\n')+"\n")
 
 
 class EnvTest(object):
