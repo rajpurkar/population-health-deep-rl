@@ -11,7 +11,7 @@ class SampleDataset(object):
         assert(first_n <= feature_length)
         self.feature_length = feature_length
         self.first_n = first_n
-        
+
     def sample(self, split):
         assert(split in ['train', 'test'])
         x = [random.choice([0, 1]) for _ in range(self.feature_length)]
@@ -27,11 +27,15 @@ def sample_generate(feature_length=None, first_n=None):
 
 
 class ActionSpace(object):
-    def __init__(self, n):
-        self.n = n
+    def __init__(self, feature_length, num_classes):
+        self.feature_length = feature_length
+        self.num_classes = num_classes
+        self.n = feature_length + num_classes
         self.rem_actions = None
 
-    def sample(self, no_sample_repeats=False):
+    def sample(self, no_sample_repeats=False, force_pred=False):
+        if force_pred is True:
+            return np.random.randint(self.feature_length, self.num_classes)
         if no_sample_repeats is True:
              return random.choice(self.rem_actions)
         else:
@@ -52,17 +56,27 @@ class EnvLogger(object):
     def clear(self):
         self.steps = []
 
-    def add_step(self, action):
-        self.steps.append(action)
+    def add_step(self, action, reward, one_hot_value):
+        self.steps.append((action, reward, one_hot_value))
 
     def render_path(self):
         path = []
-        for step in self.steps:
-            if step < len(self.sampler.feature_names):
-                path.append(self.sampler.col_to_name(step))
+        for (action, reward, one_hot_value) in self.steps:
+            if one_hot_value is not None:
+                value = np.argmax(one_hot_value)
+                value = self.sampler.col_value_to_interpretation(action, value)
+            else:
+                value = None
+            if action < len(self.sampler.feature_names):
+                action = self.sampler.col_to_name(action)
             else:
                 path.append("Predict " + str(step - len(self.sampler.feature_names)))
+                pred = str(action - len(self.sampler.feature_names))
+                action = "Predict " + pred
+            path.append((action, reward, value))
+        pp.pprint('-------------')
         self.log_file.write(pp.pformat(path)+"\n")
+        pp.pprint('-------------')
 
 
 class EnvTest(object):
@@ -76,7 +90,7 @@ class EnvTest(object):
 
         assert(self.config.max_steps <= self.feature_length)
 
-        self.action_space = ActionSpace(self.feature_length + self.num_classes) # extra quit actions
+        self.action_space = ActionSpace(self.feature_length, self.num_classes) # extra quit actions
         self.observation_space = ObservationSpace(self.config.state_shape)
 
     def reset(self, split):
@@ -85,14 +99,14 @@ class EnvTest(object):
         self.mode = split
         self.real_state, self.y = self.sampler.sample(self.mode)
         self.num_iters = 0
-        self.cur_state = np.ones_like(self.real_state) * -1
+        self.cur_state = np.zeros_like(self.real_state)
         self.action_space.rem_actions = range(self.action_space.n)
         return self.cur_state
 
     def step(self, action):
         assert(self.mode is not None)
         assert(action < self.feature_length + self.num_classes)
-        self.logger.add_step(action)
+
         self.num_iters += 1
 
         if self.config.no_repeats is True or self.config.no_sample_repeats is True:
@@ -105,6 +119,7 @@ class EnvTest(object):
                 reward = self.config.correctAnswerReward
             else:
                 reward = self.config.wrongAnswerReward
+            self.logger.add_step(action, reward, None)
             if self.mode == 'test':
                 self.logger.render_path()
         else:
@@ -113,7 +128,9 @@ class EnvTest(object):
                 reward = self.config.queryRewardMap[action]
             else:
                 reward = self.config.queryReward
-            self.cur_state[action] = self.real_state[action]
+            self.cur_state[action, :, :] = self.real_state[action, :, :]
+            self.logger.add_step(action, reward, self.real_state[action, :, :])
+
         return self.cur_state, reward, done
 
     def render(self):

@@ -2,19 +2,19 @@ import time
 
 class config():
     # env config
-    max_steps           = 5
+    max_steps           = 4
     num_classes         = 2
 
-    correctAnswerReward = 15.
-    wrongAnswerReward   = -2.
-    queryReward         = -1.
-    queryRewardMap      = { 'Region': -3.0,
-                            'Malaria endemicity': -3.0}
+    correctAnswerReward = 5.
+    wrongAnswerReward   = -5.
+    queryReward         = -0.1
+    queryRewardMap      = { 'Region': -0.01 }
 
     #exploration
     no_repeats          = False
     no_sample_repeats   = False
     random_tie_break    = True
+    force_pred          = False
 
     # training
     render_train     = False
@@ -35,11 +35,11 @@ class config():
     clip_val          = 10
     saving_freq       = 50000
     log_freq          = 100
-    eval_freq         = 5000
+    eval_freq         = 1000
     soft_epsilon      = 0.
 
     # nature paper hyper params
-    nsteps_train       = 1000000
+    nsteps_train       = 100000#0
     batch_size         = 32
     buffer_size        = 100000
     target_update_freq = 1000
@@ -48,8 +48,8 @@ class config():
     state_history      = 1
     lr_begin           = 0.00025
     lr_end             = 0.00005
-    lr_nsteps          = nsteps_train/2
+    lr_nsteps          = int(nsteps_train/1.1)
     eps_begin          = 1
     eps_end            = 0.001
-    eps_nsteps         = nsteps_train/2
+    eps_nsteps         = int(nsteps_train/1.1)
     learning_start     = 500

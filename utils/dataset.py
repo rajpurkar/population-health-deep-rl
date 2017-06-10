@@ -49,7 +49,8 @@ class Dataset(object):
         return self.feature_names.index(name)
 
     def col_value_to_interpretation(self, col_int, value):
-        raise NotImplementedError
+        return self.label_encs[col_int].inverse_transform(value)
+
 
     def process_X(self, df, cols):
         X = df.loc[:, cols]
@@ -77,4 +78,4 @@ if __name__ == '__main__':
     import sys
     d = Dataset(sys.argv[1])
     for i in range(50):
-        print(d.sample()[1]) # should be ~equal 0 and 1
+        print(d.sample()) # should be ~equal 0 and 1
