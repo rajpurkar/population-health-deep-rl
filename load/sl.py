@@ -174,6 +174,7 @@ if __name__ == '__main__':
                                                                'training data')
     parser.add_argument('--stats-dir', type=str, default='stats/')
     parser.add_argument('--run-id', type=str, default='sl')
+    parser.add_argument('--max-steps', type=int, default=2)
     args = parser.parse_args()
 
     if not os.path.exists(args.stats_dir):
@@ -188,6 +189,7 @@ if __name__ == '__main__':
     # input_weights = [k+1 for k in input_y]
     sampler = Dataset(args.file)
     survey_config = SurveyEnvConfig()
+    survey_config.max_steps = args.max_steps
     env = SurveyEnv(survey_config, sampler, log_file=path_log_file)
     x, y, pred, cost, optimizer, init = build(config, sampler.state_shape)
     run(env, x, y, pred, cost, optimizer, init, results_file, config=config)
