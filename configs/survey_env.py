@@ -41,7 +41,7 @@ class config():
     # nature paper hyper params
     nsteps_train       = 100000#0
     batch_size         = 32
-    buffer_size        = 100000
+    buffer_size        = 10000
     target_update_freq = 1000
     gamma              = 1.0
     learning_freq      = 1
@@ -50,6 +50,6 @@ class config():
     lr_end             = 0.00005
     lr_nsteps          = int(nsteps_train/1.1)
     eps_begin          = 1
-    eps_end            = 0.001
+    eps_end            = 0.01
     eps_nsteps         = int(nsteps_train/1.1)
     learning_start     = 500
