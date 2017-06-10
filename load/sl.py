@@ -9,9 +9,9 @@ from utils.exploration import LinearSchedule
 
 
 class Config():
-    def __init__(self, epochs=100, batch_size=32, n_classes=2, reg=1e-1, display_step=1, eval_step=1,
+    def __init__(self, epochs=100, batch_size=32, n_classes=2, reg=0, display_step=1, eval_step=1,
                  weighted_loss=False, num_train_examples=1000, num_test_examples=2000,
-                 keep_prob=0.9, lr_begin=0.00025, lr_end=0.00005):
+                 keep_prob=0.9, lr_begin=0.0025, lr_end=0.0005):
         self.epochs = epochs
         self.batch_size = batch_size
         self.n_classes = n_classes
@@ -44,7 +44,7 @@ def cnn_network(config, x, train_placeholder):
     for i in xrange(0, 4):
         out = layers.fully_connected(out, survey_config.max_steps, activation_fn=None)
         out = tf.nn.relu(out)
-        # out = layers.dropout(out, keep_prob=config.keep_prob, is_training=train_placeholder)
+        out = layers.dropout(out, keep_prob=config.keep_prob, is_training=train_placeholder)
     out = layers.fully_connected(out, config.n_classes, activation_fn=None)
     return out
 
