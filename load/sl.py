@@ -8,7 +8,7 @@ from utils.dataset import Dataset
 
 
 class Config():
-    def __init__(self, epochs=50, batch_size=100, n_classes=2,
+    def __init__(self, epochs=10, batch_size=100, n_classes=2,
                  learning_rate=5e-4, reg=1e-1, display_step=1, eval_step=1,
                  weighted_loss=False, num_train_examples=1000, num_test_examples=2000):
         self.epochs = epochs
@@ -75,6 +75,7 @@ def build(config, input_dim):
 
 def get_state(env, split='train'):
     total_reward = 0.
+
     state = env.reset(split=split)
 
     for f in xrange(0, survey_config.max_steps):
@@ -85,45 +86,66 @@ def get_state(env, split='train'):
     return state, total_reward
 
 
-def get_prediction_reward(env, prediction):
-    _, r, done = env.step(env.feature_length + prediction[0])
+def get_final_reward(env):
+    _, r, done = env.step(env.feature_length)
     assert done
     return r
+
+
+def get_batch(env, split='train', batch_size=32):
+    batch_X = []
+    batch_reward = []
+    batch_y = []
+    for i in xrange(0, batch_size):
+        example_X, reward = get_state(env, split=split)
+
+        batch_X.append(example_X)
+        batch_reward.append(reward)
+        final_reward = get_final_reward(env)
+        if final_reward == survey_config.correctAnswerReward:
+            batch_y.append(0)
+        else:
+            batch_y.append(1)
+
+    return np.asarray(batch_X), np.asarray(batch_reward), np.asarray(batch_y)
 
 
 def run_epoch(env, x, y, is_training, pred, cost, optimizer, sess, num_examples, split='train'):
     avg_cost = 0.
     avg_reward = 0.
-    all_preds = []
     # Loop over all batches
+    all_preds = []
+    num_batches = num_examples/config.batch_size
+    for i in range(num_batches):
+        batch_X, batch_reward, batch_y = get_batch(env, split, config.batch_size)
 
-    for i in range(num_examples):
-        example_X, reward = get_state(env, split=split)
-        example_X = np.expand_dims(example_X, axis=0)
-        q_reward = reward
+        q_reward = batch_reward
         if split == 'train':
             training = True
         else:
             training = False
 
-        train_pred = sess.run([pred], feed_dict={x: example_X, is_training: training})
+        train_pred = sess.run([pred], feed_dict={x: batch_X, is_training: training})
         train_pred = train_pred[0]
-        predictions = tf.arg_max(tf.nn.softmax(train_pred), dimension=1)
-        output = predictions.eval()
-        pred_reward = get_prediction_reward(env, output)
-        if pred_reward == env.config.correctAnswerReward:
-            example_y = output
-            all_preds.append(1)
-        else:
-            example_y = 1 - output
-            all_preds.append(0)
+        predictions = tf.arg_max(tf.nn.softmax(train_pred), dimension=1).eval()
 
+        # print(q_reward)
+        pred_rewards = np.zeros_like(batch_y)
+        right_idxes = np.where(batch_y == predictions)[0]
+        if right_idxes.shape[0] > 0:
+            pred_rewards[right_idxes] = survey_config.correctAnswerReward
+        wrong_idxes = np.where(batch_y != predictions)[0]
+        if wrong_idxes.shape[0] > 0:
+            pred_rewards[wrong_idxes] = survey_config.wrongAnswerReward
+
+        all_preds.extend([1 if batch_y[i] == predictions[i] else 0 for i in xrange(predictions.shape[0])])
         if split == 'train':
-            _, c = sess.run([optimizer, cost], feed_dict={x: example_X, y: example_y, is_training: training})
-            avg_cost += c
+            _, c = sess.run([optimizer, cost], feed_dict={x: batch_X, y: batch_y, is_training: training})
+            avg_cost += np.sum(c)
 
         # Compute average loss
-        avg_reward += q_reward + pred_reward
+        # print(pred_rewards)
+        avg_reward += np.sum(q_reward + pred_rewards)
 
     if split == 'train':
         avg_cost /= num_examples
