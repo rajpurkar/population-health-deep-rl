@@ -199,11 +199,9 @@ def run(env, x, y, train_placeholder, pred, cost, optimizer, init, output_file, 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('file', help='File to predict')
-    parser.add_argument('--overfit', action='store_true', help='If specified, tries to overfit to a single batch of '
-                                                               'training data')
+    parser.add_argument('max_steps', type=int)
     parser.add_argument('--stats-dir', type=str, default='stats/')
     parser.add_argument('--run-id', type=str, default='sl')
-    parser.add_argument('--max-steps', type=int, default=2)
     args = parser.parse_args()
 
     if not os.path.exists(args.stats_dir):
