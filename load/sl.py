@@ -30,11 +30,13 @@ def get_fake_dataset(batch_size, width, height, depth, n_classes=2):
     return batch_x, batch_y
 
 
-def cnn_network(config, x):
+def cnn_network(config, x, train_placeholder):
     out = x
-    out = layers.convolution2d(out, num_outputs=3, kernel_size=[1, 1], activation_fn=tf.nn.relu, stride=1)
+    out = layers.convolution2d(out, num_outputs=3, kernel_size=[1, 1], stride=1, activation_fn=None)
+    out = layers.batch_norm(out, is_training=train_placeholder, activation_fn=tf.nn.relu)
     out = layers.flatten(out)
-    out = layers.fully_connected(out, 10, activation_fn=tf.nn.relu)
+    out = layers.fully_connected(out, 10, activation_fn=None)
+    out = layers.batch_norm(out, is_training=train_placeholder, activation_fn=tf.nn.relu)
     out = layers.fully_connected(out, config.n_classes, activation_fn=None)
     return out
 
@@ -55,9 +57,8 @@ def build(config, input_dim):
     #get placeholders:
     x, y, train_placeholder = add_placeholder(width, height, depth)
 
-    out = layers.batch_norm(x, is_training=train_placeholder)
     # Construct model
-    pred = cnn_network(config, out)
+    pred = cnn_network(config, x, train_placeholder)
 
     # Define loss and optimizer
     cost = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(y, pred))
