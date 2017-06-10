@@ -41,9 +41,10 @@ def cnn_network(config, x):
 
 # tf Graph input
 def add_placeholder(width, height, depth):
-    x = tf.placeholder("float", [None, width, height, depth])
-    y = tf.placeholder("int64", [None, ])
-    return x, y
+    x = tf.placeholder("float", [None, width, height, depth], name="x")
+    y = tf.placeholder("int64", [None, ], name="y",)
+    train_placeholder = tf.placeholder(dtype=tf.bool, name="istraining")
+    return x, y, train_placeholder
 
 
 def build(config, input_dim):
@@ -52,10 +53,11 @@ def build(config, input_dim):
     depth = input_dim[2]
 
     #get placeholders:
-    x, y = add_placeholder(width, height, depth)
+    x, y, train_placeholder = add_placeholder(width, height, depth)
 
+    out = layers.batch_norm(x, is_training=train_placeholder)
     # Construct model
-    pred = cnn_network(config, x)
+    pred = cnn_network(config, out)
 
     # Define loss and optimizer
     cost = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(y, pred))
@@ -68,7 +70,7 @@ def build(config, input_dim):
 
     # Initializing the variables
     init = tf.global_variables_initializer()
-    return x, y, pred, cost, optimizer, init
+    return x, y, train_placeholder, pred, cost, optimizer, init
 
 
 def get_state(env, split='train'):
@@ -89,7 +91,7 @@ def get_prediction_reward(env, prediction):
     return r
 
 
-def run_epoch(env, x, y, pred, cost, optimizer, sess, num_examples, split='train'):
+def run_epoch(env, x, y, is_training, pred, cost, optimizer, sess, num_examples, split='train'):
     avg_cost = 0.
     avg_reward = 0.
     all_preds = []
@@ -99,7 +101,12 @@ def run_epoch(env, x, y, pred, cost, optimizer, sess, num_examples, split='train
         example_X, reward = get_state(env, split=split)
         example_X = np.expand_dims(example_X, axis=0)
         q_reward = reward
-        train_pred = sess.run([pred], feed_dict={x: example_X})
+        if split == 'train':
+            training = True
+        else:
+            training = False
+
+        train_pred = sess.run([pred], feed_dict={x: example_X, is_training: training})
         train_pred = train_pred[0]
         predictions = tf.arg_max(tf.nn.softmax(train_pred), dimension=1)
         output = predictions.eval()
@@ -112,7 +119,7 @@ def run_epoch(env, x, y, pred, cost, optimizer, sess, num_examples, split='train
             all_preds.append(0)
 
         if split == 'train':
-            _, c = sess.run([optimizer, cost], feed_dict={x: example_X, y: example_y})
+            _, c = sess.run([optimizer, cost], feed_dict={x: example_X, y: example_y, is_training: training})
             avg_cost += c
 
         # Compute average loss
@@ -129,7 +136,7 @@ def run_epoch(env, x, y, pred, cost, optimizer, sess, num_examples, split='train
     return avg_cost, avg_reward, acc, std
 
 
-def run(env, x, y, pred, cost, optimizer, init, output_file, config=None):
+def run(env, x, y, train_placeholder, pred, cost, optimizer, init, output_file, config=None):
     if config is None:
         config = Config()
 
@@ -140,7 +147,7 @@ def run(env, x, y, pred, cost, optimizer, init, output_file, config=None):
         # Training cycle
         for epoch in range(config.epochs):
 
-            avg_train_cost, avg_train_reward, train_acc, train_std = run_epoch(env, x, y, pred, cost, optimizer,
+            avg_train_cost, avg_train_reward, train_acc, train_std = run_epoch(env, x, y, train_placeholder, pred, cost, optimizer,
                                                          sess, config.num_train_examples)
             # Display logs per epoch step
             if (epoch+1) % config.display_step == 0:
@@ -154,7 +161,7 @@ def run(env, x, y, pred, cost, optimizer, init, output_file, config=None):
 
             if (epoch+1) % config.eval_step == 0:
                 # Test model
-                _, avg_test_reward, test_acc, test_std = run_epoch(env, x, y, pred, cost, optimizer, sess,
+                _, avg_test_reward, test_acc, test_std = run_epoch(env, x, y, train_placeholder, pred, cost, optimizer, sess,
                                                            config.num_test_examples, split='test')
                 print("Average test reward: {:.4f}".format(avg_test_reward))
                 print("Test accuracy: {:.4f}\tStd: {:.4f}".format(test_acc, test_std))
@@ -191,8 +198,8 @@ if __name__ == '__main__':
     survey_config = SurveyEnvConfig()
     survey_config.max_steps = args.max_steps
     env = SurveyEnv(survey_config, sampler, log_file=path_log_file)
-    x, y, pred, cost, optimizer, init = build(config, sampler.state_shape)
-    run(env, x, y, pred, cost, optimizer, init, results_file, config=config)
+    x, y, train_placeholder, pred, cost, optimizer, init = build(config, sampler.state_shape)
+    run(env, x, y, train_placeholder, pred, cost, optimizer, init, results_file, config=config)
 
     results_file.close()
     path_log_file.close()

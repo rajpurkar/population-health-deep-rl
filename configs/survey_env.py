@@ -43,7 +43,7 @@ class config():
     batch_size         = 32
     buffer_size        = 100000
     target_update_freq = 1000
-    gamma              = 0.999
+    gamma              = 1.0
     learning_freq      = 1
     state_history      = 1
     lr_begin           = 0.00025
