@@ -10,7 +10,7 @@ from utils.dataset import Dataset
 class Config():
     def __init__(self, epochs=50, batch_size=100, n_classes=2,
                  learning_rate=5e-4, reg=1e-1, display_step=1, eval_step=1,
-                 weighted_loss=False, num_train_examples=200, num_test_examples=200):
+                 weighted_loss=False, num_train_examples=1000, num_test_examples=2000):
         self.epochs = epochs
         self.batch_size = batch_size
         self.n_classes = n_classes
@@ -75,7 +75,7 @@ def get_state(env, split='train'):
     total_reward = 0.
     state = env.reset(split=split)
 
-    for f in xrange(0, env.feature_length):
+    for f in xrange(0, survey_config.max_steps):
         state, r, done = env.step(f)
         total_reward += r
         assert not done
