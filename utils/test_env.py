@@ -70,13 +70,13 @@ class EnvLogger(object):
             if action < len(self.sampler.feature_names):
                 action = self.sampler.col_to_name(action)
             else:
-                path.append("Predict " + str(step - len(self.sampler.feature_names)))
+                path.append("Predict " + str(action - len(self.sampler.feature_names)))
                 pred = str(action - len(self.sampler.feature_names))
                 action = "Predict " + pred
             path.append((action, reward, value))
-        pp.pprint('-------------')
+        self.log_file.write(pp.pformat('-------------\n'))
         self.log_file.write(pp.pformat(path)+"\n")
-        pp.pprint('-------------')
+        self.log_file.write(pp.pformat('-------------\n'))
 
 
 class EnvTest(object):
