@@ -2,13 +2,12 @@ import time
 
 class config():
     # env config
-    max_steps           = 4
     num_classes         = 2
+    min_steps           = 2
 
-    correctAnswerReward = 10.
-    wrongAnswerReward   = -10.
-    queryReward         = -1
-    queryRewardMap      = {} # 'Region': -0.01 }
+    correctAnswerReward = 1.
+    wrongAnswerReward   = -1.
+    queryReward         = -0.05
 
     #exploration
     no_repeats          = False
@@ -24,7 +23,7 @@ class config():
     high             = 1.
 
     # output config
-    output_path  = "results/survey_env_test/" + str(int(time.time())) + '/'
+    output_path  = "results/rl/" + str(int(time.time())) + '/'
     model_output = output_path + "model.weights/"
     log_path     = output_path + "log.txt"
     plot_output  = output_path + "scores.png"
@@ -32,10 +31,10 @@ class config():
     # model and training config
     num_episodes_test = 2000
     grad_clip         = True
-    clip_val          = 10
+    clip_val          = 1
     saving_freq       = 50000
     log_freq          = 100
-    eval_freq         = 1000
+    eval_freq         = 5000
     soft_epsilon      = 0.
 
     # nature paper hyper params

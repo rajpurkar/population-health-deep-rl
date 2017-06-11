@@ -1,11 +1,14 @@
 from __future__ import print_function
 import tensorflow as tf
 import tensorflow.contrib.layers as layers
-from predict import *
 from utils.survey_env import SurveyEnv
 from configs.survey_env import config as SurveyEnvConfig
 from utils.dataset import Dataset
 from utils.exploration import LinearSchedule
+import argparse
+import time
+import numpy as np
+import os
 
 
 class Config():
@@ -24,13 +27,6 @@ class Config():
         self.keep_prob = keep_prob
         self.lr_begin = lr_begin
         self.lr_end = lr_end
-
-
-def get_fake_dataset(batch_size, width, height, depth, n_classes=2):
-    batch_x = np.random.rand(batch_size, width, height, depth)
-    batch_y = np.random.randint(n_classes, size=(batch_size))
-    batch_y = np.array(batch_y)
-    return batch_x, batch_y
 
 
 def cnn_network(config, x, train_placeholder):
@@ -222,17 +218,17 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('file', help='File to predict')
     parser.add_argument('max_steps', type=int)
-    parser.add_argument('--stats-dir', type=str, default='stats/')
-    parser.add_argument('--run-id', type=str, default='sl')
     args = parser.parse_args()
 
-    if not os.path.exists(args.stats_dir):
-        os.makedirs(args.stats_dir)
+    output_dir = 'results/sl/' + str(int(time.time())) + '/'
 
-    results_file = os.path.join(args.stats_dir, args.run_id + "_results.txt")
-    results_file = open(results_file, 'w')
-    path_log_file = os.path.join(args.stats_dir, args.run_id + "_paths.txt")
-    path_log_file = open(path_log_file, 'w')
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    results_file = os.path.join(output_dir, "results.txt")
+    results_file = open(results_file, 'w+')
+    path_log_file = os.path.join(output_dir, "paths.txt")
+    path_log_file = open(path_log_file, 'w+')
     config = Config()
 
     # input_weights = [k+1 for k in input_y]

@@ -70,7 +70,6 @@ class EnvLogger(object):
             if action < len(self.sampler.feature_names):
                 action = self.sampler.col_to_name(action)
             else:
-                path.append("Predict " + str(action - len(self.sampler.feature_names)))
                 pred = str(action - len(self.sampler.feature_names))
                 action = "Predict " + pred
             path.append((action, reward, value))
@@ -83,12 +82,14 @@ class EnvTest(object):
     def __init__(self, config, sampler, log_file=sys.stdout):
         self.logger = EnvLogger(sampler, log_file)
         self.max_steps = config.max_steps
+        self.min_steps = config.min_steps
         self.num_classes = config.num_classes
         self.config = config
         self.feature_length = config.state_shape[0]
         self.sampler = sampler
 
         assert(self.config.max_steps <= self.feature_length)
+        assert(self.config.min_steps <= self.config.max_steps)
 
         self.action_space = ActionSpace(self.feature_length, self.num_classes) # extra quit actions
         self.observation_space = ObservationSpace(self.config.state_shape)
@@ -105,33 +106,30 @@ class EnvTest(object):
 
     def step(self, action):
         assert(self.mode is not None)
+        action = int(action)
         assert(action < self.feature_length + self.num_classes)
-
         self.num_iters += 1
+        is_pred_action = (action >= self.feature_length)
+        is_allowed_to_predict = self.num_iters > self.min_steps
+        is_done = (self.num_iters > self.max_steps) or is_pred_action
 
-        if self.config.no_repeats is True or self.config.no_sample_repeats is True:
-            if action in self.action_space.rem_actions:
-                self.action_space.rem_actions.remove(action)
-
-        done = (self.num_iters > self.max_steps) or (int(action) >= self.feature_length)
-        if done is True:
-            if self.y == int(action - self.feature_length):
-                reward = self.config.correctAnswerReward
+        if is_done:
+            if is_pred_action and is_allowed_to_predict:
+                if self.y == (action - self.feature_length):
+                    reward = self.config.correctAnswerReward
+                else:
+                    reward = self.config.wrongAnswerReward
             else:
-                reward = self.config.wrongAnswerReward
+                reward = self.config.queryReward
             self.logger.add_step(action, reward, None)
             if self.mode == 'test':
                 self.logger.render_path()
         else:
-            if (self.config.queryRewardMap and
-                    action in self.config.queryRewardMap):
-                reward = self.config.queryRewardMap[action]
-            else:
-                reward = self.config.queryReward
+            reward = self.config.queryReward
             self.cur_state[action, :, :] = self.real_state[action, :, :]
             self.logger.add_step(action, reward, self.real_state[action, :, :])
 
-        return self.cur_state, reward, done
+        return self.cur_state, reward, is_done
 
     def render(self):
         print(self.cur_state)
