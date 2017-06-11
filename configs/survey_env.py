@@ -7,7 +7,7 @@ class config():
 
     correctAnswerReward = 1.
     wrongAnswerReward   = -1.
-    queryReward         = -0.05
+    queryReward         = -0.01
 
     #exploration
     no_repeats          = False

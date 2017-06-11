@@ -107,6 +107,7 @@ class QN(object):
         Defines extra attributes for tensorboard
         """
         self.avg_reward = -0.
+        self.avg_steps = 0.
         self.max_reward = -0.
         self.std_reward = 0
 
@@ -117,7 +118,7 @@ class QN(object):
         self.eval_reward = -0.
 
 
-    def update_averages(self, rewards, max_q_values, q_values, scores_eval):
+    def update_averages(self, rewards, max_q_values, q_values, scores_eval, steps):
         """
         Update the averages
 
@@ -129,6 +130,7 @@ class QN(object):
         """
         self.avg_reward = np.mean(rewards)
         self.max_reward = np.max(rewards)
+        self.avg_steps = np.mean(steps)
         self.std_reward = np.sqrt(np.var(rewards) / len(rewards))
 
         self.max_q      = np.mean(max_q_values)
@@ -157,7 +159,7 @@ class QN(object):
 
         t = last_eval = last_record = 0 # time control of nb of steps
         scores_eval = [] # list of scores computed at iteration time
-        score, acc, std = self.evaluate('test')
+        score, acc, steps = self.evaluate('test')
         scores_eval += [score]
 
         prog = Progbar(target=self.config.nsteps_train)
@@ -204,7 +206,7 @@ class QN(object):
                 # logging stuff
                 if ((t > self.config.learning_start) and (t % self.config.log_freq == 0) and
                    (t % self.config.learning_freq == 0)):
-                    self.update_averages(rewards, max_q_values, q_values, scores_eval)
+                    self.update_averages(rewards, max_q_values, q_values, scores_eval, num_steps)
                     exp_schedule.update(t)
                     lr_schedule.update(t)
                     if len(rewards) > 0:
@@ -287,7 +289,7 @@ class QN(object):
         # replay memory to play
         replay_buffer = ReplayBuffer(self.config.buffer_size, self.config.state_history)
         rewards = []
-
+        steps = []
         outputs = []
         for i in range(num_episodes):
             total_reward = 0
@@ -301,8 +303,6 @@ class QN(object):
                 q_input = replay_buffer.encode_recent_observation()
 
                 force_pred = False
-                if num_steps >= (self.config.max_steps - 1) and self.config.force_pred is True:
-                    force_pred = True
                 num_steps += 1
 
                 action = self.get_action(q_input, force_pred)
@@ -321,24 +321,26 @@ class QN(object):
                     else:
                         outputs.append(0)
                     break
-
+            steps.append(num_steps)
             # updates to perform at the end of an episode
             rewards.append(total_reward)
 
         avg_reward = np.mean(rewards)
         sigma_reward = np.sqrt(np.var(rewards) / len(rewards))
         accuracy = np.mean(outputs)
-        std = np.std(outputs)
+        average_steps = np.mean(steps)
+        std_steps = np.std(steps)
         if num_episodes > 1:
-            msg = "Average reward: {:04.2f} +/- {:04.2f}\tAccuracy: {:04.2f}\tStd: {:04.2f}".format(avg_reward,
+            msg = "Average reward: {:04.2f} +/- {:04.2f}\tAccuracy: {:04.2f}\tSteps: {:04.2f} +/- {:04.2f}".format(avg_reward,
                                                                                                     sigma_reward,
                                                                                                     accuracy,
-                                                                                                    std)
+                                                                                                    average_steps,
+                                                                                                    std_steps)
             self.results_file.write(msg+"\n")
             self.results_file.flush()
             self.logger.info(msg)
 
-        return avg_reward, accuracy, std
+        return avg_reward, accuracy, average_steps
 
 
     def run(self):

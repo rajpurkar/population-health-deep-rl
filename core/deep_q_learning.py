@@ -122,6 +122,7 @@ class DQN(QN):
         self.avg_reward_placeholder = tf.placeholder(tf.float32, shape=(), name="avg_reward")
         self.max_reward_placeholder = tf.placeholder(tf.float32, shape=(), name="max_reward")
         self.std_reward_placeholder = tf.placeholder(tf.float32, shape=(), name="std_reward")
+        self.avg_steps_placeholder = tf.placeholder(tf.float32, shape=(), name="avg_steps")
 
         self.avg_q_placeholder = tf.placeholder(tf.float32, shape=(), name="avg_q")
         self.max_q_placeholder = tf.placeholder(tf.float32, shape=(), name="max_q")
@@ -137,6 +138,7 @@ class DQN(QN):
         tf.summary.scalar("Avg_Reward", self.avg_reward_placeholder)
         tf.summary.scalar("Max_Reward", self.max_reward_placeholder)
         tf.summary.scalar("Std_Reward", self.std_reward_placeholder)
+        tf.summary.scalar("Avg_Steps", self.avg_steps_placeholder)
 
         tf.summary.scalar("Avg_Q", self.avg_q_placeholder)
         tf.summary.scalar("Max_Q", self.max_q_placeholder)
@@ -224,6 +226,7 @@ class DQN(QN):
             self.avg_reward_placeholder: self.avg_reward,
             self.max_reward_placeholder: self.max_reward,
             self.std_reward_placeholder: self.std_reward,
+            self.avg_steps_placeholder: self.avg_steps,
             self.avg_q_placeholder: self.avg_q,
             self.max_q_placeholder: self.max_q,
             self.std_q_placeholder: self.std_q,

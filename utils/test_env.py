@@ -121,7 +121,7 @@ class EnvTest(object):
                     reward = self.config.wrongAnswerReward
             else:
                 reward = self.config.queryReward
-            self.logger.add_step(action, reward, None)
+            self.logger.add_step(action, reward, None)            
             if self.mode == 'test':
                 self.logger.render_path()
         else:

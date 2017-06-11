@@ -14,7 +14,7 @@ import os
 class Config():
     def __init__(self, epochs=100, batch_size=32, n_classes=2, reg=0, display_step=1, eval_step=1,
                  weighted_loss=False, num_train_examples=1000, num_test_examples=2000,
-                 keep_prob=0.9, lr_begin=0.0025, lr_end=0.0005):
+                 keep_prob=0.9, lr_begin=0.0025, lr_end=0.00001):
         self.epochs = epochs
         self.batch_size = batch_size
         self.n_classes = n_classes
@@ -36,11 +36,23 @@ def cnn_network(config, x, train_placeholder):
     # out = layers.batch_norm(out, is_training=train_placeholder, updates_collections=None)
     # out = tf.nn.relu(out)
     # out = layers.dropout(out, keep_prob=config.dropout, is_training=train_placeholder)
+    """
     out = layers.flatten(out)
     for i in xrange(0, 4):
         out = layers.fully_connected(out, survey_config.max_steps, activation_fn=None)
         out = tf.nn.relu(out)
         out = layers.dropout(out, keep_prob=config.keep_prob, is_training=train_placeholder)
+    
+    """
+    out = layers.convolution2d(
+            out,
+            num_outputs=survey_config.max_steps,
+            kernel_size=[1, 1],
+            activation_fn=tf.nn.relu,
+            stride=1)
+    out = layers.flatten(out)
+    out = layers.fully_connected(out, survey_config.max_steps, activation_fn=tf.nn.relu)
+    out = layers.fully_connected(out, survey_config.max_steps, activation_fn=tf.nn.relu)
     out = layers.fully_connected(out, config.n_classes, activation_fn=None)
     return out
 
@@ -100,32 +112,31 @@ def get_final_reward(env):
 
 def get_batch(env, split='train', batch_size=32):
     batch_X = []
-    batch_reward = []
+    batch_query_rewards = []
     batch_y = []
     for i in xrange(0, batch_size):
-        example_X, reward = get_state(env, split=split)
+        example_X, query_rewards = get_state(env, split=split)
 
         batch_X.append(example_X)
-        batch_reward.append(reward)
+        batch_query_rewards.append(query_rewards)
         final_reward = get_final_reward(env)
         if final_reward == survey_config.correctAnswerReward:
             batch_y.append(0)
         else:
             batch_y.append(1)
 
-    return np.asarray(batch_X), np.asarray(batch_reward), np.asarray(batch_y)
+    return np.asarray(batch_X), np.asarray(batch_query_rewards), np.asarray(batch_y)
 
 
 def run_epoch(epoch_num, env, x, y, is_training, pred, lr_placeholder, lr_schedule, cost, optimizer, sess, num_examples, split='train'):
     avg_cost = 0.
-    avg_reward = 0.
+    all_rewards = []
     # Loop over all batches
     all_preds = []
     num_batches = num_examples/config.batch_size
     for i in range(num_batches):
-        batch_X, batch_reward, batch_y = get_batch(env, split, config.batch_size)
+        batch_X, batch_query_rewards, batch_y = get_batch(env, split, config.batch_size)
 
-        q_reward = batch_reward
         if split == 'train':
             training = True
         else:
@@ -145,6 +156,7 @@ def run_epoch(epoch_num, env, x, y, is_training, pred, lr_placeholder, lr_schedu
             pred_rewards[wrong_idxes] = survey_config.wrongAnswerReward
 
         all_preds.extend([1 if batch_y[i] == predictions[i] else 0 for i in xrange(predictions.shape[0])])
+        all_rewards.extend(batch_query_rewards + pred_rewards)
         if split == 'train':
             t = epoch_num * num_batches + i
             lr_schedule.update(t)
@@ -155,19 +167,15 @@ def run_epoch(epoch_num, env, x, y, is_training, pred, lr_placeholder, lr_schedu
                                                           lr_placeholder: lr_schedule.epsilon})
             avg_cost += np.sum(c)
 
-        # Compute average loss
-        # print(pred_rewards)
-        avg_reward += np.sum(q_reward + pred_rewards)
-
     if split == 'train':
         avg_cost /= num_examples
 
-    avg_reward /= num_examples
+    avg_reward = np.mean(all_rewards)
+    std_reward = np.std(all_rewards)
 
     acc = np.mean(all_preds)
-    std = np.std(all_preds)
 
-    return avg_cost, avg_reward, acc, std
+    return avg_cost, avg_reward, std_reward, acc
 
 
 def run(env, x, y, train_placeholder, lr_placeholder, pred, cost, optimizer, init, output_file, config=None):
@@ -183,7 +191,7 @@ def run(env, x, y, train_placeholder, lr_placeholder, pred, cost, optimizer, ini
         # Training cycle
         for epoch in range(config.epochs):
 
-            avg_train_cost, avg_train_reward, train_acc, train_std = run_epoch(epoch, env, x, y, train_placeholder, pred,
+            avg_train_cost, avg_train_reward, _, train_acc = run_epoch(epoch, env, x, y, train_placeholder, pred,
                                                                                lr_placeholder, lr_schedule,
                                                                                cost, optimizer,
                                                                                sess, config.num_train_examples)
@@ -191,22 +199,22 @@ def run(env, x, y, train_placeholder, lr_placeholder, pred, cost, optimizer, ini
             if (epoch+1) % config.display_step == 0:
                 print("Epoch:", '%04d' % (epoch+1), "cost={:.9f}".format(avg_train_cost))
                 print("Average train reward: {:4f} ".format(avg_train_reward))
-                print("Train accuracy: {:.4f}\tStd: {:.4f}".format(train_acc, train_std))
+                print("Train accuracy: {:.4f}".format(train_acc))
 
                 output_file.write("Epoch: {:04d}\ttraining cost={:.9f}\n".format(epoch+1, avg_train_cost))
                 output_file.write("Average train reward: {:.4f}\n".format(avg_train_reward))
-                output_file.write("Train accuracy: {:.4f}\tStd: {:.4f}\n".format(train_acc, train_std))
+                output_file.write("Train accuracy: {:.4f}\n".format(train_acc))
 
             if (epoch+1) % config.eval_step == 0:
                 # Test model
-                _, avg_test_reward, test_acc, test_std = run_epoch(epoch, env, x, y, train_placeholder, pred,
+                _, avg_test_reward, std_test_reward, test_acc = run_epoch(epoch, env, x, y, train_placeholder, pred,
                                                                    lr_placeholder, lr_schedule,
                                                                    cost, optimizer, sess,
                                                                    config.num_test_examples, split='test')
-                print("Average test reward: {:.4f}".format(avg_test_reward))
-                print("Test accuracy: {:.4f}\tStd: {:.4f}".format(test_acc, test_std))
-                output_file.write("Average test reward: {:.4f}\n".format(avg_test_reward))
-                output_file.write("Test accuracy: {:.4f}\tStd: {:.4f}\n".format(test_acc, test_std))
+                print("Average test reward: {:04.2f} +/- {:04.2f}".format(avg_test_reward, std_test_reward))
+                print("Test accuracy: {:.4f}".format(test_acc))
+                output_file.write("Average test reward: {:04.2f} +/- {:04.2f}\n".format(avg_test_reward, std_test_reward))
+                output_file.write("Test accuracy: {:.4f}\t".format(test_acc))
 
             print("-----------------------")
             output_file.write("-----------------------")
