@@ -114,13 +114,12 @@ class EnvTest(object):
         is_done = (self.num_iters > self.max_steps) or is_pred_action
 
         if is_done:
-            if is_pred_action and is_allowed_to_predict:
-                if self.y == (action - self.feature_length):
-                    reward = self.config.correctAnswerReward
-                else:
-                    reward = self.config.wrongAnswerReward
+            if (is_pred_action
+                    and is_allowed_to_predict
+                    and self.y == (action - self.feature_length)):
+                reward = self.config.correctAnswerReward
             else:
-                reward = self.config.queryReward
+                reward = self.config.wrongAnswerReward
             self.logger.add_step(action, reward, None)            
             if self.mode == 'test':
                 self.logger.render_path()

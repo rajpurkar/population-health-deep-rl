@@ -12,9 +12,9 @@ import os
 
 
 class Config():
-    def __init__(self, epochs=100, batch_size=32, n_classes=2, reg=0, display_step=1, eval_step=1,
+    def __init__(self, epochs=20, batch_size=32, n_classes=2, reg=0, display_step=1, eval_step=1,
                  weighted_loss=False, num_train_examples=1000, num_test_examples=2000,
-                 keep_prob=0.9, lr_begin=0.0025, lr_end=0.00001):
+                 keep_prob=0.9, lr_begin=0.0025, lr_end=0.0005):
         self.epochs = epochs
         self.batch_size = batch_size
         self.n_classes = n_classes
@@ -214,7 +214,7 @@ def run(env, x, y, train_placeholder, lr_placeholder, pred, cost, optimizer, ini
                 print("Average test reward: {:04.2f} +/- {:04.2f}".format(avg_test_reward, std_test_reward))
                 print("Test accuracy: {:.4f}".format(test_acc))
                 output_file.write("Average test reward: {:04.2f} +/- {:04.2f}\n".format(avg_test_reward, std_test_reward))
-                output_file.write("Test accuracy: {:.4f}\t".format(test_acc))
+                output_file.write("Test accuracy: {:.4f}\n".format(test_acc))
 
             print("-----------------------")
             output_file.write("-----------------------")

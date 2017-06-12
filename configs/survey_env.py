@@ -7,7 +7,7 @@ class config():
 
     correctAnswerReward = 1.
     wrongAnswerReward   = -1.
-    queryReward         = -0.01
+    queryReward         = -0.05
 
     #exploration
     no_repeats          = False
@@ -47,8 +47,8 @@ class config():
     state_history      = 1
     lr_begin           = 0.00025
     lr_end             = 0.00005
-    lr_nsteps          = int(nsteps_train/1.1)
+    lr_nsteps          = int(nsteps_train/2)
     eps_begin          = 1
     eps_end            = 0.01
-    eps_nsteps         = int(nsteps_train/1.1)
+    eps_nsteps         = int(nsteps_train/2)
     learning_start     = 500
