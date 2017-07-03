@@ -92,7 +92,7 @@ class DQN(QN):
         self.add_optimizer_op("q")
 
 
-    def initialize(self):
+    def initialize(self, checkpoint=None):
         """
         Assumes the graph has been constructed
         Creates a tf Session and run initializer of variables
@@ -113,6 +113,8 @@ class DQN(QN):
         # for saving networks weights
         self.saver = tf.train.Saver()
 
+        if checkpoint is not None:
+            self.saver.restore(self.sess, checkpoint)
 
     def add_summary(self):
         """
@@ -161,7 +163,6 @@ class DQN(QN):
             os.makedirs(self.config.model_output)
 
         self.saver.save(self.sess, self.config.model_output)
-
 
     def get_best_action(self, state, force_pred=False):
         """

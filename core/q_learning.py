@@ -69,6 +69,8 @@ class QN(object):
         """
         pass
 
+    def restore_model(self, checkpoint):
+        pass
 
     def get_best_action(self, state):
         """
@@ -380,3 +382,7 @@ class QN(object):
         # record one game at the end
         if self.config.record:
             self.record()
+
+    def run_from_restore(self, checkpoint):
+        self.initialize(checkpoint)
+        self.evaluate('test')
