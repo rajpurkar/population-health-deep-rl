@@ -61,8 +61,12 @@ class Dataset(object):
             X.loc[:, col] = label_enc.fit_transform(X.loc[:, col])
             max_classes = max(len(label_enc.classes_), max_classes)
             self.label_encs.append(label_enc)
-        enc = OneHotEncoder(n_values=max_classes, sparse=False)
-        X = enc.fit_transform(X.values)
+        self.enc = OneHotEncoder(n_values=max_classes, sparse=False)
+        return self._encode_X(X.values, cols)
+
+
+    def _encode_X(self, X, cols):
+        X = self.enc.fit_transform(X)
         X = X.reshape((X.shape[0], len(cols), 1, -1))
         return X
 

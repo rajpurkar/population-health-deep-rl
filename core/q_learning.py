@@ -293,9 +293,11 @@ class QN(object):
         rewards = []
         steps = []
         outputs = []
-        for i in range(num_episodes):
+        for i in xrange(num_episodes):
             total_reward = 0
             state = self.env.reset(split)
+            if state == None:
+                break
             num_steps = 0
             while True:
                 if self.config.render_test: self.env.render()
